@@ -1,23 +1,20 @@
-import { GoogleLogin, googleLogout } from '@react-oauth/google';
-import { jwtDecode } from 'jwt-decode';
+import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { authAPI } from '../services/api';
 
 function Login() {
 
   const navigate = useNavigate();
   const [error, setError] = useState(null);
 
-  const handleSuccess = (credentialResponse) => {
+  const handleSuccess = async (credentialResponse) => {
     try {
-      const decoded = jwtDecode(credentialResponse.credential);
+      const response = await authAPI.googleLogin(credentialResponse.credential);
       
-      localStorage.setItem('user', JSON.stringify({
-        email: decoded.email,
-        name: decoded.name || decoded.given_name,
-        picture: decoded.picture,
-        id: decoded.sub
-      }));
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      window.dispatchEvent(new Event('authStateChange'));
       navigate('/app');
     } catch (error) {
       console.error('Token decoding failed:', error);
@@ -39,7 +36,7 @@ function Login() {
           console.error('Login Failed');
           setError('Google login failed. Please try again.');
         }}
-        useOneTap={true}
+        // useOneTap={true}
       />
     </div>
   );

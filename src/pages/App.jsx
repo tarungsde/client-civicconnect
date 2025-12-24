@@ -3,6 +3,7 @@ import 'leaflet/dist/leaflet.css';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { useNavigate } from 'react-router-dom';
+import { reportAPI } from '../services/api';
 
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -82,8 +83,26 @@ function App() {
     return null;
   }
 
+  const submitReport = async (reportData) => {
+    try {
+      const fullReport = {
+        ...reportData,
+        latitude,
+        longitude
+      };
+      
+      await reportAPI.createReport(fullReport);
+      alert('Report submitted successfully!');
+    } catch (error) {
+      console.error('Report submission error:', error);
+      alert('Failed to submit report');
+    }
+  };
+
   const handleLogout = () => {
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
+    window.dispatchEvent(new Event('authStateChange'));
     navigate('/');
   };
 
