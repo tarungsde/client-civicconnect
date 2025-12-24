@@ -4,9 +4,9 @@ import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle, Tooltip 
 import L from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import { reportAPI } from '../services/api';
-
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import ReportCard from './ReportCard';
 
 function App() {
   const [latitude, setLatitude] = useState(13.083512739205634);
@@ -15,6 +15,8 @@ function App() {
   const [locationError, setLocationError] = useState(null);
   const [accuracy, setAccuracy] = useState(null);
   const [manualMode, setManualMode] = useState(false);
+  const [showReportForm, setShowReportForm] = useState(false);
+  const [editingReport, setEditingReport] = useState(null);
   const [user, setUser] = useState(null);
 
   const navigate = useNavigate();
@@ -200,6 +202,29 @@ function App() {
           />
         )}
       </MapContainer>
+
+      <div>
+        {showReportForm && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <ReportCard
+                latitude={latitude}
+                longitude={longitude}
+                onSuccess={(newReport) => {
+                  console.log('Report created:', newReport);
+                  setShowReportForm(false);
+                  // Add marker to map, etc.
+                }}
+                onCancel={() => setShowReportForm(false)}
+              />
+            </div>
+          </div>
+        )}
+        <button onClick={() => setShowReportForm(true)}>
+          Report Issue Here
+        </button>
+      </div>
+
       {!isLoading && !manualMode && (
         <button
           onClick={() => setManualMode(true)}
