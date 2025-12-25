@@ -16,14 +16,15 @@ API.interceptors.request.use((config) => {
 
 export const authAPI = {
   googleLogin: (token) => API.post('/auth/google', { token }),
-  getCurentUser : () => API.get('/auth/me'),
-  logout: () => API.post('auth/logout')
+  getCurrentUser : () => API.get('/auth/me'),
+  logout: () => API.post('/auth/logout')
 };
 
 export const reportAPI = {
   createReport: (reportData) => API.post('/reports', reportData),
   getMyReports: () => API.get('/reports/my-reports'),
   getAllReports: (params) => API.get('/reports', { params }),
+  updateReport: (id, reportData) => API.put(`/reports/${id}`, reportData),
   updateReportStatus: (id, status) => API.patch(`/reports/${id}/status`, { status })
 };
 
