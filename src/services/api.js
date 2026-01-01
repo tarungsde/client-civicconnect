@@ -22,6 +22,11 @@ export const authAPI = {
 
 export const reportAPI = {
   createReport: (reportData) => API.post('/reports', reportData),
+  uploadImages: (formData) => API.post('/reports/upload', formData, {
+    headers : {
+      "Content-Type": 'multipart/form-data'
+    }
+  }),
   getMyReports: () => API.get('/reports/my-reports'),
   getAllReports: (params) => API.get('/reports', { params }),
   updateReport: (id, reportData) => API.put(`/reports/${id}`, reportData),

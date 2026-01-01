@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle, Tooltip } from 'react-leaflet';
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle, Tooltip, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import { reportAPI } from '../services/api';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import ReportCard from './ReportCard';
+// import { MarkerClusterGroup } from 'react-leaflet-cluster';
 
 function App() {
   const [latitude, setLatitude] = useState(13.083512739205634);
@@ -18,6 +19,9 @@ function App() {
   const [showReportForm, setShowReportForm] = useState(false);
   const [editingReport, setEditingReport] = useState(null);
   const [user, setUser] = useState(null);
+  const [reports, setReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(true);
+  const [reportsError, setReportsError] = useState(null);
 
   const navigate = useNavigate();
 
@@ -85,6 +89,28 @@ function App() {
     return null;
   }
 
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        setLoadingReports(true);
+        const response = await reportAPI.getAllReports({
+          latitude,
+          longitude,
+          radius: 5000
+        });
+        console.log(response);
+        setReports(response.data.reports);
+        setLoadingReports(false); 
+      } catch (error) {
+        setReportsError('Failed to load reports');
+        console.error('Failed to fetch report:', error);
+      } finally {
+        setLoadingReports(false);
+      }
+    };
+    fetchReports();
+  }, [latitude, longitude]);
+
   const submitReport = async (reportData) => {
     try {
       const fullReport = {
@@ -107,6 +133,12 @@ function App() {
     window.dispatchEvent(new Event('authStateChange'));
     navigate('/');
   };
+
+  const reportIcon = L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Or your own
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+  });
 
   return (
     <div>
@@ -190,6 +222,33 @@ function App() {
             You are here
           </Tooltip> */}
         </Marker>
+
+        {/* <MarkerClusterGroup> */}
+          {reports.map((report) => (
+            <Marker
+              key={report._id || `${report.latitude}-${report.longitude}`}
+              position={[report.latitude, report.longitude]} 
+              icon={reportIcon}
+            >
+              <Popup>
+                <div>
+                  <h3>{report.title}</h3>
+                  <p>{report.description}</p>
+                  <p><strong>Category:</strong> {report.category}</p>
+                  <p><strong>Status:</strong> {report.status}</p>
+                  {/* {report.photos && report.photos.length > 0 && (
+                    <img 
+                      src={report.photos[0]} 
+                      alt={report.title}
+                      style={{ width: '100px' }}
+                    />
+                  )} */}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        {/* </MarkerClusterGroup> */}
+
         {accuracy && (
           <Circle
             center={[latitude,longitude]}

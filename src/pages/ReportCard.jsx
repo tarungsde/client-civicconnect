@@ -19,6 +19,7 @@ function ReportCard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [preview, setPreview] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   useEffect(() => {
     if (editing) {
@@ -60,13 +61,20 @@ function ReportCard({
     }
 
     try {
+
+      let photoUrls = [];
+      if (selectedFiles.length > 0) {
+        photoUrls = await uploadImages(selectedFiles);
+      }
+
       const reportData = {
         title: title.trim(),
         description: description.trim(),
         category,
         urgency,
         latitude: editing ? editing.latitude : latitude,
-        longitude: editing ? editing.longitude : longitude
+        longitude: editing ? editing.longitude : longitude,
+        photos: photoUrls
       };
 
       let result;
@@ -98,12 +106,61 @@ function ReportCard({
 
   const handleImageInputs = (e) => {
     const files = Array.from(e.target.files);
+
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        alert(`${file.name} is not an image file`);
+        return false;
+      }
+
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        alert(`${file.name} exceeds 5MB limit`);
+        return false;
+      }
+      
+      return true;
+    });
+
+    if (validFiles.length > 5) {
+      alert('Maximum 5 images allowed');
+      validFiles.splice(5);
+    }
+
     const imageUrls = files.map((file) => 
       URL.createObjectURL(file)
     );
 
     setPreview(imageUrls);
+    setSelectedFiles(validFiles);
   }
+
+  const uploadImages = async (files) => {
+    const formData = new FormData();
+    
+    files.forEach(file => {
+      formData.append('images', file); // 'images' matches backend
+    });
+    
+    try {
+      const response = await reportAPI.uploadImages(formData);
+      return response.data.urls; // Array of image URLs
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      throw new Error('Failed to upload images');
+    }
+  };
+
+  const removeImage = (index) => {
+    URL.revokeObjectURL(preview[index]);
+    const newPreview = [...preview];
+    newPreview.splice(index, 1);
+    setPreview(newPreview);
+    
+    const newFiles = [...selectedFiles];
+    newFiles.splice(index, 1);
+    setSelectedFiles(newFiles);
+  };
 
   return (
     <form onSubmit={handleSubmit}>
@@ -191,14 +248,39 @@ function ReportCard({
           multiple
           required
         />
-        <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+
+        <div style={{ display: "flex", gap: "10px", marginTop: "10px", flexWrap: "wrap" }}>
           {preview.map((src, index) => (
-            <img
-              key={index}
-              src={src}
-              alt={`Preview ${index}`}
-              width={100}
-            />
+            <div key={index} style={{ position: 'relative' }}>
+              <img
+                src={src}
+                alt={`Preview ${index}`}
+                style={{ 
+                  width: 100, 
+                  height: 100, 
+                  objectFit: 'cover',
+                  borderRadius: '5px'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => removeImage(index)}
+                style={{
+                  position: 'absolute',
+                  top: -5,
+                  right: -5,
+                  background: 'red',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 20,
+                  height: 20,
+                  cursor: 'pointer'
+                }}
+              >
+                ×
+              </button>
+            </div>
           ))}
         </div>
       </div>
