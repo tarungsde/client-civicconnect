@@ -7,6 +7,7 @@ import { reportAPI } from '../services/api';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import ReportCard from './ReportCard';
+import UpvoteButton from './UpvoteButton';
 // import { MarkerClusterGroup } from 'react-leaflet-cluster';
 
 function App() {
@@ -110,22 +111,6 @@ function App() {
     };
     fetchReports();
   }, [latitude, longitude]);
-
-  const submitReport = async (reportData) => {
-    try {
-      const fullReport = {
-        ...reportData,
-        latitude,
-        longitude
-      };
-      
-      await reportAPI.createReport(fullReport);
-      alert('Report submitted successfully!');
-    } catch (error) {
-      console.error('Report submission error:', error);
-      alert('Failed to submit report');
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -231,18 +216,49 @@ function App() {
               icon={reportIcon}
             >
               <Popup>
-                <div>
-                  <h3>{report.title}</h3>
-                  <p>{report.description}</p>
-                  <p><strong>Category:</strong> {report.category}</p>
-                  <p><strong>Status:</strong> {report.status}</p>
-                  {/* {report.photos && report.photos.length > 0 && (
+                <div style={{ minWidth: '200px' }}>
+                  <h3 style={{ marginBottom: '10px' }}>{report.title}</h3>
+                  <p style={{ marginBottom: '10px' }}>{report.description}</p>
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    marginBottom: '10px'
+                  }}>
+                    <span><strong>Category:</strong> {report.category}</span>
+                    <span><strong>Status:</strong> {report.status}</span>
+                  </div>
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    marginTop: '15px',
+                    paddingTop: '10px',
+                    borderTop: '1px solid #eee'
+                  }}>
+                    <UpvoteButton 
+                      reportId={report._id} 
+                      initialUpvotes={report.upvoteCount || 0}
+                    />
+                    <small style={{ color: '#666' }}>
+                      {new Date(report.createdAt).toLocaleDateString()}
+                    </small>
+                  </div>
+                  
+                  {report.photos && report.photos.length > 0 && (
                     <img 
                       src={report.photos[0]} 
                       alt={report.title}
-                      style={{ width: '100px' }}
+                      style={{ 
+                        width: '100%', 
+                        maxHeight: '150px',
+                        objectFit: 'cover',
+                        borderRadius: '5px',
+                        marginTop: '10px'
+                      }}
                     />
-                  )} */}
+                  )}
                 </div>
               </Popup>
             </Marker>

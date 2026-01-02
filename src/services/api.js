@@ -30,7 +30,9 @@ export const reportAPI = {
   getMyReports: () => API.get('/reports/my-reports'),
   getAllReports: (params) => API.get('/reports', { params }),
   updateReport: (id, reportData) => API.put(`/reports/${id}`, reportData),
-  updateReportStatus: (id, status) => API.patch(`/reports/${id}/status`, { status })
+  updateReportStatus: (id, status) => API.patch(`/reports/${id}/status`, { status }),
+  upvoteReport: (id) => API.post(`/reports/${id}/upvote`),
+  checkUpvote: (id) => API.get(`/reports/${id}/upvote/check`),
 };
 
 export default API;
