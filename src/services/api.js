@@ -35,4 +35,10 @@ export const reportAPI = {
   checkUpvote: (id) => API.get(`/reports/${id}/upvote/check`),
 };
 
+export const adminAPI = {
+  getReports: (params) => API.get('/admin/reports', { params }),
+  updateStatus: (id, data) => API.patch(`/admin/reports/${id}/status`, data),
+  getStats: () => API.get('/admin/stats')
+};
+
 export default API;

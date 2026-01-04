@@ -311,6 +311,15 @@ function ReportCard({
           {loading ? 'Saving...' : (editing ? 'Update' : 'Submit')}
         </button>
       </div>
+
+      {editing && (
+        <button onClick={() => {
+          setEditingReport(null);
+          setShowReportForm(false);
+        }}>
+          Cancel Edit
+        </button>
+      )}
     </form>
   );
   

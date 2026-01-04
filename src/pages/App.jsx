@@ -8,7 +8,6 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import ReportCard from './ReportCard';
 import UpvoteButton from './UpvoteButton';
-// import { MarkerClusterGroup } from 'react-leaflet-cluster';
 
 function App() {
   const [latitude, setLatitude] = useState(13.083512739205634);
@@ -109,7 +108,10 @@ function App() {
         setLoadingReports(false);
       }
     };
-    fetchReports();
+    const timer = setTimeout(() => {
+      fetchReports();
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [latitude, longitude]);
 
   const handleLogout = () => {
@@ -208,71 +210,76 @@ function App() {
           </Tooltip> */}
         </Marker>
 
-        {/* <MarkerClusterGroup> */}
-          {reports.map((report) => (
-            <Marker
-              key={report._id || `${report.latitude}-${report.longitude}`}
-              position={[report.latitude, report.longitude]} 
-              icon={reportIcon}
-            >
-              <Popup>
-                <div style={{ minWidth: '200px' }}>
-                  <h3 style={{ marginBottom: '10px' }}>{report.title}</h3>
-                  <p style={{ marginBottom: '10px' }}>{report.description}</p>
-                  
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    marginBottom: '10px'
-                  }}>
-                    <span><strong>Category:</strong> {report.category}</span>
-                    <span><strong>Status:</strong> {report.status}</span>
-                  </div>
-                  
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    marginTop: '15px',
-                    paddingTop: '10px',
-                    borderTop: '1px solid #eee'
-                  }}>
-                    <UpvoteButton 
-                      reportId={report._id} 
-                      initialUpvotes={report.upvoteCount || 0}
-                    />
-                    <small style={{ color: '#666' }}>
-                      {new Date(report.createdAt).toLocaleDateString()}
-                    </small>
-                  </div>
-                  
-                  {report.photos && report.photos.length > 0 && (
-                    <img 
-                      src={report.photos[0]} 
-                      alt={report.title}
-                      style={{ 
-                        width: '100%', 
-                        maxHeight: '150px',
-                        objectFit: 'cover',
-                        borderRadius: '5px',
-                        marginTop: '10px'
-                      }}
-                    />
-                  )}
+        {reports.map((report) => (
+          <Marker
+            key={report._id || `${report.latitude}-${report.longitude}`}
+            position={[report.latitude, report.longitude]} 
+            icon={reportIcon}
+          >
+            <Popup>
+              <div style={{ minWidth: '200px' }}>
+                <h3 style={{ marginBottom: '10px' }}>{report.title}</h3>
+                <p style={{ marginBottom: '10px' }}>{report.description}</p>
+                
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  marginBottom: '10px'
+                }}>
+                  <span><strong>Category:</strong> {report.category}</span>
+                  <span><strong>Status:</strong> {report.status}</span>
                 </div>
-              </Popup>
-            </Marker>
-          ))}
-        {/* </MarkerClusterGroup> */}
+                
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  marginTop: '15px',
+                  paddingTop: '10px',
+                  borderTop: '1px solid #eee'
+                }}>
+                  <UpvoteButton 
+                    reportId={report._id} 
+                    initialUpvotes={report.upvoteCount || 0}
+                  />
+                  <small style={{ color: '#666' }}>
+                    {new Date(report.createdAt).toLocaleDateString()}
+                  </small>
+                </div>
+                
+                {report.photos && report.photos.length > 0 && (
+                  <img 
+                    src={report.photos[0]} 
+                    alt={report.title}
+                    style={{ 
+                      width: '100%', 
+                      maxHeight: '150px',
+                      objectFit: 'cover',
+                      borderRadius: '5px',
+                      marginTop: '10px'
+                    }}
+                  />
+                )}
+                <button onClick={() => {
+                  setEditingReport(report);
+                  setShowReportForm(true);
+                }}>
+                  Edit
+                </button>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
 
         {accuracy && (
           <Circle
             center={[latitude,longitude]}
-            radius={accuracy}
+            radius={Math.min(accuracy, 500)}
             pathOptions={{
               color: "blue",
               fillColor: "#3388ff",
-              fillOpacity: 0.1
+              fillOpacity: 0.1,
+              dashArray: '5, 5',
             }}
           />
         )}
