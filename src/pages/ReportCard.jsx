@@ -27,6 +27,15 @@ function ReportCard({
       setDescription(editing.description || '');
       setCategory(editing.category || '');
       setUrgency(editing.urgency || 'medium');
+      setPreview([]);
+      setSelectedFiles([]);
+    } else {
+      setTitle('');
+      setDescription('');
+      setCategory('');
+      setUrgency('medium');
+      setPreview([]);
+      setSelectedFiles([]);
     }
   }, [editing]);
 
@@ -63,8 +72,13 @@ function ReportCard({
     try {
 
       let photoUrls = [];
+      if (editing && editing.photos) {
+        photoUrls = [...editing.photos];
+      }
+
       if (selectedFiles.length > 0) {
         photoUrls = await uploadImages(selectedFiles);
+        photoUrls = [...photoUrls, ...uploadedUrls];
       }
 
       const reportData = {
@@ -94,6 +108,8 @@ function ReportCard({
         setDescription('');
         setCategory('');
         setUrgency('medium');
+        setPreview([]);
+        setSelectedFiles([]);
       }
     } catch (error) {
       console.error('Report submission error:', error);
@@ -127,7 +143,7 @@ function ReportCard({
       validFiles.splice(5);
     }
 
-    const imageUrls = files.map((file) => 
+    const imageUrls = validFiles.map((file) => 
       URL.createObjectURL(file)
     );
 
@@ -238,88 +254,154 @@ function ReportCard({
         </select>
       </div>
 
-      <div>
-        <label htmlFor="issue-image">Upload Image</label>
+      {editing && editing.photos && editing.photos.length > 0 && (
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+            Existing Photos ({editing.photos.length})
+          </label>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            {editing.photos.map((photo, index) => (
+              <div key={index} style={{ position: 'relative' }}>
+                <img
+                  src={photo}
+                  alt={`Existing ${index}`}
+                  style={{ 
+                    width: 80, 
+                    height: 80, 
+                    objectFit: 'cover',
+                    borderRadius: '5px',
+                    border: '2px solid #ddd'
+                  }}
+                />
+                <div style={{
+                  fontSize: '10px',
+                  textAlign: 'center',
+                  marginTop: '2px',
+                  color: '#666'
+                }}>
+                  Existing
+                </div>
+              </div>
+            ))}
+          </div>
+          <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
+            Note: You cannot remove existing photos. Add new ones below.
+          </small>
+        </div>
+      )}
+
+
+      <div style={{ marginBottom: '15px' }}>
+        <label htmlFor="issue-image" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+          {editing ? 'Add More Images' : 'Upload Images'} (Optional)
+        </label>
         <input 
           id='issue-image' 
           type='file' 
           accept='image/*'
           onChange={handleImageInputs}
           multiple
-          required
+          style={{
+            width: '100%',
+            padding: '5px',
+            marginBottom: '10px'
+          }}
         />
 
-        <div style={{ display: "flex", gap: "10px", marginTop: "10px", flexWrap: "wrap" }}>
-          {preview.map((src, index) => (
-            <div key={index} style={{ position: 'relative' }}>
-              <img
-                src={src}
-                alt={`Preview ${index}`}
-                style={{ 
-                  width: 100, 
-                  height: 100, 
-                  objectFit: 'cover',
-                  borderRadius: '5px'
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                style={{
-                  position: 'absolute',
-                  top: -5,
-                  right: -5,
-                  background: 'red',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: 20,
-                  height: 20,
-                  cursor: 'pointer'
-                }}
-              >
-                ×
-              </button>
+        {preview.length > 0 && (
+          <>
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px", flexWrap: "wrap" }}>
+              {preview.map((src, index) => (
+                <div key={index} style={{ position: 'relative' }}>
+                  <img
+                    src={src}
+                    alt={`Preview ${index}`}
+                    style={{ 
+                      width: 80, 
+                      height: 80, 
+                      objectFit: 'cover',
+                      borderRadius: '5px'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    style={{
+                      position: 'absolute',
+                      top: -8,
+                      right: -8,
+                      background: 'red',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: 20,
+                      height: 20,
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+            <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
+              {preview.length} new image(s) selected
+            </small>
+          </>
+        )}
       </div>
 
-      <div className="location-info">
-        <small>
-          Location: {latitude?.toFixed(6)}, {longitude?.toFixed(6)}
+      <div style={{ marginBottom: '20px', padding: '10px', background: '#f8f9fa', borderRadius: '4px' }}>
+        <small style={{ color: '#666' }}>
+          <strong>Location:</strong> {latitude?.toFixed(6)}, {longitude?.toFixed(6)}
+          {editing && (
+            <div style={{ marginTop: '5px' }}>
+              <em>Location cannot be changed when editing a report.</em>
+            </div>
+          )}
         </small>
       </div>
 
-      <div className="form-actions">
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            className="cancel-btn"
-          >
-            Cancel
-          </button>
-        )}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={loading}
+          style={{
+            padding: '10px 20px',
+            background: '#6c757d',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            opacity: loading ? 0.6 : 1
+          }}
+        >
+          Cancel
+        </button>
         
         <button 
           type="submit" 
           disabled={loading}
-          className="submit-btn"
+          style={{
+            padding: '10px 20px',
+            background: editing ? '#007bff' : '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            opacity: loading ? 0.6 : 1
+          }}
         >
-          {loading ? 'Saving...' : (editing ? 'Update' : 'Submit')}
+          {loading ? 'Saving...' : (editing ? 'Update Report' : 'Submit Report')}
         </button>
       </div>
-
-      {editing && (
-        <button onClick={() => {
-          setEditingReport(null);
-          setShowReportForm(false);
-        }}>
-          Cancel Edit
-        </button>
-      )}
     </form>
   );
   

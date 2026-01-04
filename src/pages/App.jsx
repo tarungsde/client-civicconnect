@@ -260,12 +260,14 @@ function App() {
                     }}
                   />
                 )}
-                <button onClick={() => {
-                  setEditingReport(report);
-                  setShowReportForm(true);
-                }}>
-                  Edit
-                </button>
+                {report.reportedBy._id === user?.id && (
+                  <button onClick={() => {
+                    setEditingReport(report);
+                  }}>
+                    Edit
+                  </button>
+                )}
+                
               </div>
             </Popup>
           </Marker>
@@ -286,7 +288,7 @@ function App() {
       </MapContainer>
 
       <div>
-        {showReportForm && (
+        {(showReportForm || editingReport) && (
           <div style={{
             position: 'fixed',
             top: 0,
@@ -309,21 +311,40 @@ function App() {
                     overflow: 'auto'
             }}>
               <ReportCard
+                editing={editingReport}
                 latitude={latitude}
                 longitude={longitude}
-                onSuccess={(newReport) => {
-                  console.log('Report created:', newReport);
+                onSuccess={(updatedReport) => {
+                  console.log('Report saved:', updatedReport);
+                
+                  if (editingReport) {
+                    setReports(prevReports => 
+                      prevReports.map(report => 
+                        report._id === updatedReport._id ? updatedReport : report
+                      )
+                    );
+                  } else {
+                    setReports(prevReports => [updatedReport, ...prevReports]);
+                  }
                   setShowReportForm(false);
-                  // Add marker to map, etc.
-                }}
-                onCancel={() => setShowReportForm(false)}
+                  setEditingReport(null);
+          }}
+                onCancel={() => {
+                  setShowReportForm(false);
+                  setEditingReport(null);
+                  }
+                }
               />
             </div>
           </div>
         )}
       </div>
+
       <button 
-        onClick={() => setShowReportForm(true)}
+        onClick={() => {
+          setEditingReport(null);
+          setShowReportForm(true);
+        }}
         style={{
           position: 'absolute',
           bottom: '60px',
