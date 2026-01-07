@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { adminAPI } from '../services/api';
 import AdminReportPopup from './AdminReportPopup';
-// import AdminSidebar from '../components/AdminSidebar';
-// import ReportTable from '../components/ReportTable';
-// import StatsDashboard from '../components/StatsDashboard';
+import AdminSidebar from './AdminSidebar';
+import ReportTable from './ReportTable';
+import StatsDashboard from './StatsDashboard';
 
 function AdminDashboard() {
   const [reports, setReports] = useState([]);
@@ -45,12 +45,12 @@ function AdminDashboard() {
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
       {/* Sidebar */}
-      {/* <AdminSidebar 
+      <AdminSidebar 
         filters={filters}
         setFilters={setFilters}
         viewMode={viewMode}
         setViewMode={setViewMode}
-      /> */}
+      />
       
       {/* Main Content */}
       <div style={{ flex: 1 }}>
@@ -74,16 +74,16 @@ function AdminDashboard() {
           </MapContainer>
         )}
         
-        {/* {viewMode === 'table' && (
+        {viewMode === 'table' && (
           <ReportTable 
             reports={reports}
             onStatusUpdate={updateStatus}
           />
-        )} */}
+        )}
         
-        {/* {viewMode === 'stats' && (
+        {viewMode === 'stats' && (
           <StatsDashboard />
-        )} */}
+        )}
       </div>
     </div>
   );
