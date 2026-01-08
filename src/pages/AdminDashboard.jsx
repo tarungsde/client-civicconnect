@@ -31,9 +31,9 @@ function AdminDashboard() {
     }
   };
 
-  const updateStatus = async (reportId, status) => {
+  const updateStatus = async (reportId, status, adminNotes) => {
     try {
-      await adminAPI.updateStatus(reportId, { status });
+      await adminAPI.updateStatus(reportId, status, adminNotes);
       fetchReports(); // Refresh
       alert('Status updated successfully');
     } catch (error) {

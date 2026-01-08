@@ -28,7 +28,7 @@ export const reportAPI = {
     }
   }),
   getMyReports: () => API.get('/reports/my-reports'),
-  getAllReports: (params) => API.get('/reports', { params }),
+  getAllReports: () => API.get('/reports'),
   updateReport: (id, reportData) => API.put(`/reports/${id}`, reportData),
   updateReportStatus: (id, status) => API.patch(`/reports/${id}/status`, { status }),
   upvoteReport: (id) => API.post(`/reports/${id}/upvote`),
@@ -37,7 +37,7 @@ export const reportAPI = {
 
 export const adminAPI = {
   getReports: (params) => API.get('/admin/reports', { params }),
-  updateStatus: (id, data) => API.patch(`/admin/reports/${id}/status`, data),
+  updateStatus: (id, status, adminNotes) => API.patch(`/admin/reports/${id}/status`, status, adminNotes),
   getStats: () => API.get('/admin/stats')
 };
 

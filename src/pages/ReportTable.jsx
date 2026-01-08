@@ -6,10 +6,10 @@ function ReportTable({ reports, onStatusUpdate }) {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending': return '#ffc107';
-      case 'in-progress': return '#17a2b8';
-      case 'resolved': return '#28a745';
-      case 'false report': return '#dc3545';
+      case 'Pending': return '#ffc107';
+      case 'In-progress': return '#17a2b8';
+      case 'Resolved': return '#28a745';
+      case 'Rejected': return '#dc3545';
       default: return '#6c757d';
     }
   };
@@ -84,7 +84,7 @@ function ReportTable({ reports, onStatusUpdate }) {
                     <span style={{
                       padding: '4px 8px',
                       background: getStatusColor(report.status),
-                      color: report.status === 'pending' ? 'black' : 'white',
+                      color: report.status === 'Pending' ? 'black' : 'white',
                       borderRadius: '12px',
                       fontSize: '12px',
                       fontWeight: 'bold'
@@ -109,10 +109,10 @@ function ReportTable({ reports, onStatusUpdate }) {
                         }}
                       >
                         <option value="">Change Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="in-progress">In Progress</option>
-                        <option value="resolved">Resolved</option>
-                        <option value="false report">False Report</option>
+                        <option value="Pending">Pending</option>
+                        <option value="In-progress">In Progress</option>
+                        <option value="Resolved">Resolved</option>
+                        <option value="Rejected">Rejected</option>
                       </select>
                       {statusUpdate[report._id] && (
                         <button

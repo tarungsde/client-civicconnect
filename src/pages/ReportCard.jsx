@@ -77,8 +77,8 @@ function ReportCard({
       }
 
       if (selectedFiles.length > 0) {
-        photoUrls = await uploadImages(selectedFiles);
-        photoUrls = [...photoUrls, ...uploadedUrls];
+        const newPhotoUrls = await uploadImages(selectedFiles);
+        photoUrls = [...photoUrls, ...newPhotoUrls];
       }
 
       const reportData = {

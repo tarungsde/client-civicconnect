@@ -96,7 +96,7 @@ function App() {
         const response = await reportAPI.getAllReports({
           latitude,
           longitude,
-          radius: 5000
+          // radius: 5000
         });
         console.log(response);
         setReports(response.data.reports);

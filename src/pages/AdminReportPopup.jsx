@@ -4,7 +4,7 @@ function AdminReportPopup({ report, onStatusUpdate }) {
   const [selectedStatus, setSelectedStatus] = useState(report.status);
   const [adminNotes, setAdminNotes] = useState('');
   
-  const statusOptions = ['pending', 'in-progress', 'resolved', 'rejected'];
+  const statusOptions = ['Pending', 'In-progress', 'Resolved', 'Rejected'];
   
   const handleStatusUpdate = () => {
     onStatusUpdate(report._id, {
