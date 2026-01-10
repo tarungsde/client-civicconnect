@@ -5,10 +5,10 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 
 import './index.css';
-import App from './pages/App.jsx';
-import Login from './pages/Login.jsx';
-import AdminDashboard from './pages/AdminDashboard.jsx';
-import ErrorBoundary from './pages/ErrorBoundary.jsx';
+import App from './components/App.jsx';
+import Login from './components/Login.jsx';
+import AdminDashboard from './components/AdminDashboard.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 
 const AuthRoutes = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

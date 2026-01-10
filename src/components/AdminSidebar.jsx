@@ -1,7 +1,7 @@
 import React from 'react';
 
 function AdminSidebar({ filters, setFilters, viewMode, setViewMode }) {
-  const statusOptions = ['', 'pending', 'in-progress', 'resolved', 'false report'];
+  const statusOptions = ['', 'Pending', 'In-progress', 'Resolved', 'Rejected'];
   const categoryOptions = ['', 'pothole', 'garbage', 'streetlight', 'water', 'traffic', 'other'];
 
   const handleFilterChange = (key, value) => {
@@ -180,7 +180,7 @@ function AdminSidebar({ filters, setFilters, viewMode, setViewMode }) {
       }}>
         <h4 style={{ marginBottom: '10px', fontSize: '16px' }}>Quick Actions</h4>
         <button
-          onClick={() => setFilters({...filters, status: 'pending'})}
+          onClick={() => setFilters({...filters, status: 'Pending'})}
           style={{
             width: '100%',
             padding: '8px',
@@ -196,7 +196,7 @@ function AdminSidebar({ filters, setFilters, viewMode, setViewMode }) {
           View Pending Reports
         </button>
         <button
-          onClick={() => setFilters({...filters, status: 'resolved'})}
+          onClick={() => setFilters({...filters, status: 'Resolved'})}
           style={{
             width: '100%',
             padding: '8px',

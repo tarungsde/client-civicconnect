@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { reportAPI } from '../services/api';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import ReportCard from './ReportCard';
+import Report from './Report';
 import UpvoteButton from './UpvoteButton';
 
 function App() {
@@ -22,6 +22,12 @@ function App() {
   const [reports, setReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const [reportsError, setReportsError] = useState(null);
+  const [filters, setFilters] = useState({
+    status: '',
+    category: '',
+    dateFrom: '',
+    dateTo: ''
+  });
 
   const navigate = useNavigate();
 
@@ -89,30 +95,39 @@ function App() {
     return null;
   }
 
+  const fetchReports = async () => {
+    try {
+      setLoadingReports(true);
+      const response = await reportAPI.getAllReports(
+        // latitude,
+        // longitude,
+        // radius: 5000
+        filters
+      );
+      console.log(response);
+      setReports(response.data.reports);
+      setLoadingReports(false); 
+    } catch (error) {
+      setReportsError('Failed to load reports');
+      console.error('Failed to fetch report:', error);
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        setLoadingReports(true);
-        const response = await reportAPI.getAllReports({
-          latitude,
-          longitude,
-          // radius: 5000
-        });
-        console.log(response);
-        setReports(response.data.reports);
-        setLoadingReports(false); 
-      } catch (error) {
-        setReportsError('Failed to load reports');
-        console.error('Failed to fetch report:', error);
-      } finally {
-        setLoadingReports(false);
-      }
-    };
     const timer = setTimeout(() => {
       fetchReports();
     }, 1000);
     return () => clearTimeout(timer);
   }, [latitude, longitude]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchReports();
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [filters]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -126,6 +141,22 @@ function App() {
     iconSize: [30, 30],
     iconAnchor: [15, 30],
   });
+
+  const statusOptions = ['', 'Pending', 'In-progress', 'Resolved', 'Rejected'];
+  const categoryOptions = ['', 'pothole', 'garbage', 'streetlight', 'water', 'traffic', 'other'];
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      status: '',
+      category: '',
+      dateFrom: '',
+      dateTo: ''
+    });
+  };
 
   return (
     <div>
@@ -167,6 +198,100 @@ function App() {
         </div>
       )}
 
+      <div style={{ marginBottom: '30px' }}>
+        <h4 style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Filters
+          <button
+            onClick={clearFilters}
+            style={{
+              padding: '4px 8px',
+              fontSize: '12px',
+              background: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer'
+            }}
+          >
+            Clear
+          </button>
+        </h4>
+        
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Status</label>
+          <select
+            value={filters.status}
+            onChange={(e) => handleFilterChange('status', e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          >
+            {statusOptions.map(status => (
+              <option key={status} value={status}>
+                {status === '' ? 'All Status' : status}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Category</label>
+          <select
+            value={filters.category}
+            onChange={(e) => handleFilterChange('category', e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          >
+            {categoryOptions.map(category => (
+              <option key={category} value={category}>
+                {category === '' ? 'All Categories' : category}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Date From</label>
+          <input
+            type="date"
+            value={filters.dateFrom}
+            onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Date To</label>
+          <input
+            type="date"
+            value={filters.dateTo}
+            onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          />
+        </div>
+      </div>
+
       <MapContainer 
         center={[latitude, longitude]} 
         zoom={15}
@@ -185,6 +310,7 @@ function App() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
         />
+        <button>hello</button>
         <Marker
           key={`${latitude}-${longitude}`} 
           position={[latitude, longitude]} 
@@ -310,7 +436,7 @@ function App() {
                     maxHeight: '90vh',
                     overflow: 'auto'
             }}>
-              <ReportCard
+              <Report
                 editing={editingReport}
                 latitude={latitude}
                 longitude={longitude}
