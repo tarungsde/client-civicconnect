@@ -197,98 +197,100 @@ function App() {
           Unable to get your location. Showing default location instead.
         </div>
       )}
+      <div>
+        <div style={{ marginBottom: '30px' }}>
+          <h4 style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            Filters
+            <button
+              onClick={clearFilters}
+              style={{
+                padding: '4px 8px',
+                fontSize: '12px',
+                background: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer'
+              }}
+            >
+              Clear
+            </button>
+          </h4>
+          
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Status</label>
+            <select
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            >
+              {statusOptions.map(status => (
+                <option key={status} value={status}>
+                  {status === '' ? 'All Status' : status}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div style={{ marginBottom: '30px' }}>
-        <h4 style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          Filters
-          <button
-            onClick={clearFilters}
-            style={{
-              padding: '4px 8px',
-              fontSize: '12px',
-              background: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: 'pointer'
-            }}
-          >
-            Clear
-          </button>
-        </h4>
         
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Status</label>
-          <select
-            value={filters.status}
-            onChange={(e) => handleFilterChange('status', e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ced4da',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
-          >
-            {statusOptions.map(status => (
-              <option key={status} value={status}>
-                {status === '' ? 'All Status' : status}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Category</label>
+            <select
+              value={filters.category}
+              onChange={(e) => handleFilterChange('category', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            >
+              {categoryOptions.map(category => (
+                <option key={category} value={category}>
+                  {category === '' ? 'All Categories' : category}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Category</label>
-          <select
-            value={filters.category}
-            onChange={(e) => handleFilterChange('category', e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ced4da',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
-          >
-            {categoryOptions.map(category => (
-              <option key={category} value={category}>
-                {category === '' ? 'All Categories' : category}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Date From</label>
+            <input
+              type="date"
+              value={filters.dateFrom}
+              onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            />
+          </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Date From</label>
-          <input
-            type="date"
-            value={filters.dateFrom}
-            onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ced4da',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Date To</label>
-          <input
-            type="date"
-            value={filters.dateTo}
-            onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ced4da',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}
-          />
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Date To</label>
+            <input
+              type="date"
+              value={filters.dateTo}
+              onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            />
+          </div>
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { adminAPI } from '../services/api';
 import AdminReportPopup from './AdminReportPopup';
@@ -16,6 +17,7 @@ function AdminDashboard() {
     dateFrom: '',
     dateTo: ''
   });
+  const navigate = useNavigate();
 
   // Fetch reports with filters
   useEffect(() => {
@@ -42,8 +44,23 @@ function AdminDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.dispatchEvent(new Event('authStateChange'));
+    navigate('/');
+  }
+
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
+
+      <button 
+        style={{position: 'fixed', top: '5px', right: '5px', background: 'red', zIndex: '1000'}}
+        onClick={handleLogout}
+      >
+        Logout
+      </button>
+
       {/* Sidebar */}
       <AdminSidebar 
         filters={filters}
