@@ -20,6 +20,7 @@ function ReportCard({
   const [error, setError] = useState('');
   const [preview, setPreview] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [address, setAddress] = useState('');
 
   useEffect(() => {
     if (editing) {
@@ -44,6 +45,12 @@ function ReportCard({
       preview.forEach(url => URL.revokeObjectURL(url));
     };
   }, [preview]);
+
+  useEffect(() => {
+    if (latitude && longitude) {
+      fetchAddress(latitude, longitude);
+    }
+  }, [latitude, longitude]);
 
 
   const handleSubmit = async (e) => {
@@ -177,6 +184,21 @@ function ReportCard({
     newFiles.splice(index, 1);
     setSelectedFiles(newFiles);
   };
+
+  const fetchAddress = async (lat, lon) => {
+    try {
+      const result = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+      const data = await result.json();
+      if (data && data.display_name) {
+        setAddress(data.display_name);
+      } else {
+        setAddress('Address not found');
+      }
+    } catch (error) {
+      console.error('Failed to fetch address:', error);
+      setAddress('Address not found');
+    }
+  }
 
   return (
     <form onSubmit={handleSubmit}>
@@ -357,7 +379,7 @@ function ReportCard({
 
       <div style={{ marginBottom: '20px', padding: '10px', background: '#f8f9fa', borderRadius: '4px' }}>
         <small style={{ color: '#666' }}>
-          <strong>Location:</strong> {latitude?.toFixed(6)}, {longitude?.toFixed(6)}
+          <strong>Location:</strong> {address || 'Fetching address...'}
           {editing && (
             <div style={{ marginTop: '5px' }}>
               <em>Location cannot be changed when editing a report.</em>

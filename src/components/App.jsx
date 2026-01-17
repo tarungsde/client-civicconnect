@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle, Tooltip, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -29,6 +29,8 @@ function App() {
     dateTo: ''
   });
 
+  const watchIdRef = useRef(null);
+
   const navigate = useNavigate();
 
   const defaultIcon = L.icon({
@@ -47,15 +49,24 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
+  const getLocation = (isManualRefresh = false) => {
     if(!navigator.geolocation) {
       setLocationError("Geolocation is not supported by your browser");
       setIsLoading(false);
-      return;
+      return null;
     }
-    
+
+    if(isManualRefresh) {
+      setIsLoading(true);
+      setLocationError(null);
+    }
+
+    if (watchIdRef.current) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
+  
     const watchId = navigator.geolocation.watchPosition(
-      (position) => {
+      async (position) => {
         setLatitude(position.coords.latitude);
         setLongitude(position.coords.longitude);
         setAccuracy(position.coords.accuracy);
@@ -72,8 +83,17 @@ function App() {
         maximumAge: 0
       }
     );
+
+    watchIdRef.current = watchId;
+    return watchId;
+  }
+
+  useEffect(() => {
+    getLocation();
+
     return () => {
-      navigator.geolocation.clearWatch(watchId);
+      if(watchIdRef.current)
+        navigator.geolocation.clearWatch(watchIdRef.current);
     }
   }, []);
 
@@ -158,6 +178,21 @@ function App() {
     });
   };
 
+  const fetchAddress = async (lat, lon) => {
+    try {
+      const result = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+      const data = await result.json();
+      if (data && data.display_name) {
+        return data.display_name;
+      } else {
+        return 'Address not found';
+      }
+    } catch (error) {
+      console.error('Failed to fetch address:', error);
+      return 'Address not found';
+    }
+  }
+
   return (
     <div>
       {isLoading && (
@@ -199,6 +234,23 @@ function App() {
       )}
       <div>
         <div style={{ marginBottom: '30px' }}>
+          <button 
+            onClick={() => { getLocation(true); }} 
+            disabled={isLoading}
+            style={{
+              marginBottom: '15px',
+              padding: '8px 16px',
+              background: isLoading ? '#6c757d' : '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              opacity: isLoading ? 0.7 : 1
+            }}
+          >
+            {isLoading ? 'Getting location...' : 'Refresh Location'}
+          </button>
           <h4 style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             Filters
             <button
@@ -232,7 +284,7 @@ function App() {
             >
               {statusOptions.map(status => (
                 <option key={status} value={status}>
-                  {status === '' ? 'All Status' : status}
+                  {status === '' ? 'Select Status' : status}
                 </option>
               ))}
             </select>
@@ -356,6 +408,7 @@ function App() {
                 }}>
                   <span><strong>Category:</strong> {report.category}</span>
                   <span><strong>Status:</strong> {report.status}</span>
+                  <span><strong>Location:</strong> {fetchAddress(report.latitude?.toFixed(6), report.longitude?.toFixed(6))}</span>
                 </div>
                 
                 <div style={{ 
