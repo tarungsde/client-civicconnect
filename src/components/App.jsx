@@ -178,21 +178,6 @@ function App() {
     });
   };
 
-  const fetchAddress = async (lat, lon) => {
-    try {
-      const result = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
-      const data = await result.json();
-      if (data && data.display_name) {
-        return data.display_name;
-      } else {
-        return 'Address not found';
-      }
-    } catch (error) {
-      console.error('Failed to fetch address:', error);
-      return 'Address not found';
-    }
-  }
-
   return (
     <div>
       {isLoading && (
@@ -408,7 +393,7 @@ function App() {
                 }}>
                   <span><strong>Category:</strong> {report.category}</span>
                   <span><strong>Status:</strong> {report.status}</span>
-                  <span><strong>Location:</strong> {fetchAddress(report.latitude?.toFixed(6), report.longitude?.toFixed(6))}</span>
+                  <span><strong>Location:</strong> {report.address || 'Address not found'}</span>
                 </div>
                 
                 <div style={{ 
