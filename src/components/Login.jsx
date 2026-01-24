@@ -23,21 +23,32 @@ function Login() {
   }
 
   return (
-    <div>
-      {error && (
-        <div>
-          {error}
-        </div>
-      )}
+    <div className='login-container'>
+      <div className='login-card'>   
+        <h2 className="login-title">Welcom to Civic Connect!</h2>   
+        <p className="login-subtitle">Sign in to continue.</p>
 
-      <GoogleLogin 
-        onSuccess={handleSuccess}
-        onError={() => {
-          console.error('Login Failed');
-          setError('Google login failed. Please try again.');
-        }}
-        // useOneTap={true}
-      />
+        <div className="google-button-wrapper">
+          <GoogleLogin 
+            onSuccess={handleSuccess}
+            onError={() => {
+              console.error('Login Failed');
+              setError('Google login failed. Please try again.');
+            }}
+            // useOneTap={true}
+          />
+        </div>
+        {error && (
+          <div className="error-message">
+            {error}
+          </div>
+        )}
+        <div className="login-footer">
+          <p className="privacy-note">
+            By signing in, you agree to our Terms and Privacy Policy
+          </p>
+        </div>
+      </div>     
     </div>
   );
 }

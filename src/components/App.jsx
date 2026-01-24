@@ -1,13 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle, Tooltip, Popup } from 'react-leaflet';
-import L from 'leaflet';
+import L, { icon } from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import { reportAPI } from '../services/api';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import multiColorPin from '../assets/multi-color-pin.png';
+import redPin from '../assets/red-pin.png';
+import yellowPin from '../assets/yellow-pin.png';
+import greenPin from '../assets/green-pin.png';
+import blackPin from '../assets/black-pin.png';
 import Report from './Report';
 import UpvoteButton from './UpvoteButton';
+
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 function App() {
   const [latitude, setLatitude] = useState(13.083512739205634);
@@ -33,14 +44,13 @@ function App() {
 
   const navigate = useNavigate();
 
-  const defaultIcon = L.icon({
-    iconUrl: markerIcon,
-    shadowUrl: markerShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-  });
+  // const defaultIcon = L.icon({
+  //   iconUrl: markerIcon,
+  //   iconSize: [25, 41],
+  //   iconAnchor: [12, 41],
+  //   popupAnchor: [1, -34],
+  //   shadowSize: [41, 41]
+  // });
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
@@ -156,12 +166,6 @@ function App() {
     navigate('/');
   };
 
-  const reportIcon = L.icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Or your own
-    iconSize: [30, 30],
-    iconAnchor: [15, 30],
-  });
-
   const statusOptions = ['', 'Pending', 'In-progress', 'Resolved', 'Rejected'];
   const categoryOptions = ['', 'pothole', 'garbage', 'streetlight', 'water', 'traffic', 'other'];
 
@@ -176,6 +180,50 @@ function App() {
       dateFrom: '',
       dateTo: ''
     });
+  };
+
+  const statusIcons = {
+    'pending': L.icon({
+      iconUrl: redPin,
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [30, 42], 
+      iconAnchor: [15, 42],
+      popupAnchor: [1, -34]
+    }),
+    'in-progress': L.icon({
+      iconUrl: yellowPin,
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [30, 42],
+      iconAnchor: [15, 42],
+      popupAnchor: [1, -34]
+    }),
+    'resolved': L.icon({
+      iconUrl: greenPin,
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [30, 42],
+      iconAnchor: [15, 42],
+      popupAnchor: [1, -34]
+    }),
+    'false report': L.icon({
+      iconUrl: blackPin,
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [30, 42],
+      iconAnchor: [15, 42],
+      popupAnchor: [1, -34]
+    }),
+    'default': L.icon({
+      iconUrl: multiColorPin,
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [30, 42],
+      iconAnchor: [15, 42],
+      popupAnchor: [1, -34]
+    })
+  };
+
+  // Helper function to get the right icon
+  const getStatusIcon = (status) => {
+    const normalizedStatus = status?.toLowerCase();
+    return statusIcons[normalizedStatus] || statusIcons['default'];
   };
 
   return (
@@ -331,6 +379,11 @@ function App() {
         </div>
       </div>
 
+      {/* <div>
+        <multiColorPin />
+      </div> */}
+
+
       <MapContainer 
         center={[latitude, longitude]} 
         zoom={15}
@@ -353,7 +406,7 @@ function App() {
         <Marker
           key={`${latitude}-${longitude}`} 
           position={[latitude, longitude]} 
-          icon={defaultIcon}
+          // icon={icon}
           draggable={manualMode}
           eventHandlers={{
             dragend: (e) => {
@@ -375,69 +428,73 @@ function App() {
           </Tooltip> */}
         </Marker>
 
-        {reports.map((report) => (
-          <Marker
-            key={report._id || `${report.latitude}-${report.longitude}`}
-            position={[report.latitude, report.longitude]} 
-            icon={reportIcon}
-          >
-            <Popup>
-              <div style={{ minWidth: '200px' }}>
-                <h3 style={{ marginBottom: '10px' }}>{report.title}</h3>
-                <p style={{ marginBottom: '10px' }}>{report.description}</p>
-                
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  marginBottom: '10px'
-                }}>
-                  <span><strong>Category:</strong> {report.category}</span>
-                  <span><strong>Status:</strong> {report.status}</span>
-                  <span><strong>Location:</strong> {report.address || 'Address not found'}</span>
-                </div>
-                
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between',
-                  marginTop: '15px',
-                  paddingTop: '10px',
-                  borderTop: '1px solid #eee'
-                }}>
-                  <UpvoteButton 
-                    reportId={report._id} 
-                    initialUpvotes={report.upvoteCount || 0}
-                  />
-                  <small style={{ color: '#666' }}>
-                    {new Date(report.createdAt).toLocaleDateString()}
-                  </small>
-                </div>
-                
-                {report.photos && report.photos.length > 0 && (
-                  <img 
-                    src={report.photos[0]} 
-                    alt={report.title}
-                    style={{ 
-                      width: '100%', 
-                      maxHeight: '150px',
-                      objectFit: 'cover',
-                      borderRadius: '5px',
-                      marginTop: '10px'
-                    }}
-                  />
-                )}
-                {report.reportedBy._id === user?.id && (
-                  <button onClick={() => {
-                    setEditingReport(report);
+        {reports.map((report) => {
+
+          const icon = getStatusIcon(report.status);
+
+          return (
+            <Marker
+              key={report._id || `${report.latitude}-${report.longitude}`}
+              position={[report.latitude, report.longitude]} 
+              icon={icon}
+            >
+              <Popup>
+                <div style={{ minWidth: '200px' }}>
+                  <h3 style={{ marginBottom: '10px' }}>{report.title}</h3>
+                  <p style={{ marginBottom: '10px' }}>{report.description}</p>
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    marginBottom: '10px'
                   }}>
-                    Edit
-                  </button>
-                )}
-                
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+                    <span><strong>Category:</strong> {report.category}</span>
+                    <span><strong>Status:</strong> {report.status}</span>
+                    <span><strong>Location:</strong> {report.address || 'Address not found'}</span>
+                  </div>
+                  
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    marginTop: '15px',
+                    paddingTop: '10px',
+                    borderTop: '1px solid #eee'
+                  }}>
+                    <UpvoteButton 
+                      reportId={report._id} 
+                      initialUpvotes={report.upvoteCount || 0}
+                    />
+                    <small style={{ color: '#666' }}>
+                      {new Date(report.createdAt).toLocaleDateString()}
+                    </small>
+                  </div>
+                  
+                  {report.photos && report.photos.length > 0 && (
+                    <img 
+                      src={report.photos[0]} 
+                      alt={report.title}
+                      style={{ 
+                        width: '100%', 
+                        maxHeight: '150px',
+                        objectFit: 'cover',
+                        borderRadius: '5px',
+                        marginTop: '10px'
+                      }}
+                    />
+                  )}
+                  {report.reportedBy._id === user?.id && (
+                    <button onClick={() => {
+                      setEditingReport(report);
+                    }}>
+                      Edit
+                    </button>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
 
         {accuracy && (
           <Circle
@@ -494,7 +551,7 @@ function App() {
                   }
                   setShowReportForm(false);
                   setEditingReport(null);
-          }}
+                  }}
                 onCancel={() => {
                   setShowReportForm(false);
                   setEditingReport(null);
