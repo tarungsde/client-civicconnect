@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle, Tooltip, Popup } from 'react-leaflet';
-import L, { icon } from 'leaflet';
+import L from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import { reportAPI } from '../services/api';
 import multiColorPin from '../assets/multi-color-pin.png';
@@ -12,7 +12,7 @@ import blackPin from '../assets/black-pin.png';
 import Report from './Report';
 import UpvoteButton from './UpvoteButton';
 
-delete L.Icon.Default.prototype._getIconUrl;
+// delete L.Icon.Default.prototype._getIconUrl;
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -44,13 +44,13 @@ function App() {
 
   const navigate = useNavigate();
 
-  // const defaultIcon = L.icon({
-  //   iconUrl: markerIcon,
-  //   iconSize: [25, 41],
-  //   iconAnchor: [12, 41],
-  //   popupAnchor: [1, -34],
-  //   shadowSize: [41, 41]
-  // });
+  const userIcon = L.icon({
+    iconUrl: multiColorPin,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
@@ -145,18 +145,15 @@ function App() {
     }
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchReports();
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [latitude, longitude]);
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     fetchReports();
+  //   }, 1000);
+  //   return () => clearTimeout(timer);
+  // }, [latitude, longitude]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
       fetchReports();
-    }, 1000);
-    return () => clearTimeout(timer);
   }, [filters]);
 
   const handleLogout = () => {
@@ -166,7 +163,7 @@ function App() {
     navigate('/');
   };
 
-  const statusOptions = ['', 'Pending', 'In-progress', 'Resolved', 'Rejected'];
+  const statusOptions = ['', 'All', 'Pending', 'In-progress', 'Resolved', 'Rejected'];
   const categoryOptions = ['', 'pothole', 'garbage', 'streetlight', 'water', 'traffic', 'other'];
 
   const handleFilterChange = (key, value) => {
@@ -204,7 +201,7 @@ function App() {
       iconAnchor: [15, 42],
       popupAnchor: [1, -34]
     }),
-    'false report': L.icon({
+    'rejected': L.icon({
       iconUrl: blackPin,
       shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
       iconSize: [30, 42],
@@ -402,11 +399,11 @@ function App() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
         />
-        <button>hello</button>
+
         <Marker
           key={`${latitude}-${longitude}`} 
           position={[latitude, longitude]} 
-          // icon={icon}
+          icon={userIcon}
           draggable={manualMode}
           eventHandlers={{
             dragend: (e) => {
@@ -418,14 +415,14 @@ function App() {
             }
           }}
         >
-          {/* <Tooltip
+          <Tooltip
             direction="top"
             offset={[0, -10]}
             permanent
             className="marker-label"
           >
             You are here
-          </Tooltip> */}
+          </Tooltip>
         </Marker>
 
         {reports.map((report) => {

@@ -37,7 +37,7 @@ export const reportAPI = {
 
 export const adminAPI = {
   getReports: (params) => API.get('/admin/reports', { params }),
-  updateStatus: (id, status, adminNotes) => API.patch(`/admin/reports/${id}/status`, status, adminNotes),
+  updateStatus: (id, data) => API.patch(`/admin/reports/${id}/status`, data),
   getStats: () => API.get('/admin/stats')
 };
 

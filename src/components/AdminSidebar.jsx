@@ -1,6 +1,6 @@
 import React from 'react';
 
-function AdminSidebar({ filters, setFilters, viewMode, setViewMode }) {
+function AdminSidebar({ filters, setFilters, viewMode, setViewMode, setReports }) {
   const statusOptions = ['', 'Pending', 'In-progress', 'Resolved', 'Rejected'];
   const categoryOptions = ['', 'pothole', 'garbage', 'streetlight', 'water', 'traffic', 'other'];
 
@@ -195,7 +195,7 @@ function AdminSidebar({ filters, setFilters, viewMode, setViewMode }) {
         >
           View Pending Reports
         </button>
-        <button
+        {/* <button
           onClick={() => setFilters({...filters, status: 'Resolved'})}
           style={{
             width: '100%',
@@ -205,10 +205,29 @@ function AdminSidebar({ filters, setFilters, viewMode, setViewMode }) {
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
-            fontSize: '14px'
+            fontSize: '14px',
+            marginBottom: '8px'
           }}
         >
           View Resolved Reports
+        </button> */}
+        <button
+          onClick={() => {
+            setFilters({...filters, status: '!Resolved'});
+          }}
+          style={{
+            width: '100%',
+            padding: '8px',
+            marginBottom: '8px',
+            background: '#ffc107',
+            color: 'black',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          Hide Resolved Reports
         </button>
       </div>
     </div>

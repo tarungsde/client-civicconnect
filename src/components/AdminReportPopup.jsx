@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function AdminReportPopup({ report, onStatusUpdate }) {
+function AdminReportPopup({ report, onStatusUpdate, isUpdatingStatus }) {
   const [selectedStatus, setSelectedStatus] = useState(report.status);
   const [adminNotes, setAdminNotes] = useState('');
   
@@ -47,6 +47,7 @@ function AdminReportPopup({ report, onStatusUpdate }) {
         
         <button 
           onClick={handleStatusUpdate}
+          disabled={isUpdatingStatus}
           style={{
             width: '100%',
             padding: '8px',
@@ -54,10 +55,11 @@ function AdminReportPopup({ report, onStatusUpdate }) {
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            opacity: isUpdatingStatus ? 0.6 : 1
           }}
         >
-          Update Status
+          {isUpdatingStatus ? 'Updating...' : 'Update Status'}
         </button>
       </div>
       
