@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { adminAPI } from '../services/api';
+import toast, { Toaster } from 'react-hot-toast';
 import AdminReportPopup from './AdminReportPopup';
 import AdminSidebar from './AdminSidebar';
 import ReportTable from './ReportTable';
@@ -23,6 +24,8 @@ function AdminDashboard() {
     dateTo: ''
   });
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
   // Fetch reports with filters
@@ -31,24 +34,46 @@ function AdminDashboard() {
   }, [filters]);
 
   const fetchReports = async () => {
+    setLoading(true);
     try {
       const response = await adminAPI.getReports(filters);
       setReports(response.data.reports);
     } catch (error) {
       console.error('Failed to fetch reports:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const updateStatus = async (reportId, status, adminNotes) => {
+  const updateStatus = async (reportId, data) => {
     try {
       setIsUpdatingStatus(true);
-      await adminAPI.updateStatus(reportId, { status, adminNotes });
-      setIsUpdatingStatus(false);
+      await adminAPI.updateStatus(reportId, data);
+      toast.success('Status updated successfully', {
+        duration: 3000,
+        position: 'top-right',
+        style: {
+          background: '#2cdd55',
+          color: '#fff',
+        },
+      });
       fetchReports(); // Refresh
-      alert('Status updated successfully');
     } catch (error) {
       console.error('Failed to update status:', error);
-      alert('Failed to update status');
+      toast.error(`Failed to update status: ${error.response?.data?.error || error.message}`, {
+        duration: 4000,
+        position: 'top-right',
+        style: {
+          background: '#dc3545',
+          color: 'white',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          fontWeight: 'bold',
+        },
+        icon: '❌',
+      });
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -105,6 +130,10 @@ function AdminDashboard() {
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
+
+      <Toaster 
+        position="top-right"
+      />
 
       <button 
         style={{position: 'fixed', top: '5px', right: '5px', background: 'red', zIndex: '1000'}}
