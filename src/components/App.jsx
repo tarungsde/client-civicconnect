@@ -137,7 +137,6 @@ function App() {
       );
       console.log(response);
       setReports(response.data.reports);
-      setLoadingReports(false); 
     } catch (error) {
       setReportsError('Failed to load reports');
       console.error('Failed to fetch report:', error);
@@ -225,318 +224,232 @@ function App() {
   };
 
   return (
-    <div>
+    <div className='app-shell'>
+
+      <div className='app-header'>
+        <h1 className='app-title'>Civic Connect</h1>
+        <button
+          className='btn btn-logout'
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+      </div>
+
+      <div className='app-body'>
+        <aside className='sidebar'> 
+          <div className='filter-container'>
+            <h4 className="filter-header">
+              Filters
+              <button
+                onClick={clearFilters}
+                className='btn-clear'
+              >
+                Clear
+              </button>
+            </h4>
+            
+            <div className='filter-group'>
+              <label className='filter-label'>Status</label>
+              <select
+                className='filter-select'
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+              >
+                {statusOptions.map(status => (
+                  <option key={status} value={status}>
+                    {status === '' ? 'Select Status' : status}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className='filter-group'>
+              <label className='filter-label'>Category</label>
+              <select
+                className='filter-select'
+                value={filters.category}
+                onChange={(e) => handleFilterChange('category', e.target.value)}
+              >
+                {categoryOptions.map(category => (
+                  <option key={category} value={category}>
+                    {category === '' ? 'All Categories' : category}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className='filter-group'>
+              <label className='filter-label'>Date From</label>
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+              />
+            </div>
+
+            <div className='filter-group'>
+              <label className='filter-label'>Date To</label>
+              <input
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+              />
+            </div>
+          </div>
+        </aside>
+
+        <main className='map-area'>
+          <MapContainer 
+            className='leaflet-container'
+            center={[latitude, longitude]} 
+            zoom={15}
+          >
+            <ChangeView 
+              center={[latitude, longitude]} 
+              zoom={15} 
+              manualMode={manualMode}
+              onLocationSet={(lat, lng) => {
+                setLatitude(lat);
+                setLongitude(lng);
+                setManualMode(false);
+              }}
+            />
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+            />
+
+            <Marker
+              key={`${latitude}-${longitude}`} 
+              position={[latitude, longitude]} 
+              icon={userIcon}
+              draggable={manualMode}
+              eventHandlers={{
+                dragend: (e) => {
+                  const marker = e.target;
+                  const position = marker.getLatLng();
+                  setLatitude(position.lat);
+                  setLongitude(position.lng);
+                  setManualMode(false);
+                }
+              }}
+            >
+              <Tooltip
+                direction="top"
+                offset={[0, -10]}
+                permanent
+                className="marker-label"
+              >
+                You are here
+              </Tooltip>
+            </Marker>
+
+            {reports.map((report) => {
+              const icon = getStatusIcon(report.status);
+              return (
+                <Marker
+                  key={report._id || `${report.latitude}-${report.longitude}`}
+                  position={[report.latitude, report.longitude]} 
+                  icon={icon}
+                >
+                  <Popup>
+                    <div className='report-popup'>
+                      <div className='popup-header'>
+                        <h3>{report.title}</h3>
+                        <p className='popup-description'>{report.description}</p>
+                      </div>
+                      
+                      <div className='popup-details'>
+                        <div className="detail-item">
+                          <span className="detail-label">Category:</span>
+                          <span>{report.category}</span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Status:</span>
+                          <span className={`status-badge status-${report.status?.toLowerCase()}`}>
+                            {report.status}
+                          </span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Location:</span>
+                          <span>{report.address || 'Address not found'}</span>
+                        </div>
+                      </div>
+
+                      <div className="popup-footer">
+                        <UpvoteButton 
+                          reportId={report._id} 
+                          initialUpvotes={report.upvoteCount || 0}
+                        />
+                        <span className="popup-date">
+                          {new Date(report.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      
+                      {report.photos && report.photos.length > 0 && (
+                        <img 
+                          src={report.photos[0]} 
+                          alt={report.title}
+                          className='popup-image'
+                        />
+                      )}
+                      {report.reportedBy._id === user?.id && (
+                        <button 
+                          onClick={() => {
+                            setEditingReport(report);
+                          }}
+                          className='btn btn-sm btn-primary popup-edit-btn'
+                        >
+                          Edit Report
+                        </button>
+                      )}
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+
+            {accuracy && (
+              <Circle
+                center={[latitude,longitude]}
+                radius={Math.min(accuracy, 500)}
+                pathOptions={{
+                  color: "blue",
+                  fillColor: "#3388ff",
+                  fillOpacity: 0.1,
+                  dashArray: '5, 5',
+                }}
+              />
+            )}
+          </MapContainer>
+        </main>
+
+      </div>
+
       {isLoading && (
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          background: 'white',
-          padding: '10px 20px',
-          borderRadius: '5px',
-          boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-          fontFamily: 'Arial, sans-serif'
-        }}>
+        <div className='loading-overlay'>
           Getting your location...
         </div>
       )}
       
       {locationError && !isLoading && (
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          background: 'rgba(255, 235, 235, 0.95)',
-          padding: '10px 20px',
-          borderRadius: '5px',
-          boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-          color: '#d32f2f',
-          maxWidth: '80%',
-          textAlign: 'center',
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '14px'
-        }}>
+        <div className='error-overlay'>
           Unable to get your location. Showing default location instead.
         </div>
       )}
-      <div>
-        <div style={{ marginBottom: '30px' }}>
-          <button 
-            onClick={() => { getLocation(true); }} 
-            disabled={isLoading}
-            style={{
-              marginBottom: '15px',
-              padding: '8px 16px',
-              background: isLoading ? '#6c757d' : '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              opacity: isLoading ? 0.7 : 1
-            }}
-          >
-            {isLoading ? 'Getting location...' : 'Refresh Location'}
-          </button>
 
-          <Toaster 
-            position="top-right"
-            richColors
-          />
+      <Toaster 
+          position="top-right"
+          richColors
+      />
 
-          <h4 style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            Filters
-            <button
-              onClick={clearFilters}
-              style={{
-                padding: '4px 8px',
-                fontSize: '12px',
-                background: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer'
-              }}
-            >
-              Clear
-            </button>
-          </h4>
-          
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ced4da',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
-            >
-              {statusOptions.map(status => (
-                <option key={status} value={status}>
-                  {status === '' ? 'Select Status' : status}
-                </option>
-              ))}
-            </select>
-          </div>
-
-        
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Category</label>
-            <select
-              value={filters.category}
-              onChange={(e) => handleFilterChange('category', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ced4da',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
-            >
-              {categoryOptions.map(category => (
-                <option key={category} value={category}>
-                  {category === '' ? 'All Categories' : category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Date From</label>
-            <input
-              type="date"
-              value={filters.dateFrom}
-              onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ced4da',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Date To</label>
-            <input
-              type="date"
-              value={filters.dateTo}
-              onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ced4da',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* <div>
-        <multiColorPin />
-      </div> */}
-
-
-      <MapContainer 
-        center={[latitude, longitude]} 
-        zoom={15}
-      >
-        <ChangeView 
-          center={[latitude, longitude]} 
-          zoom={15} 
-          manualMode={manualMode}
-          onLocationSet={(lat, lng) => {
-            setLatitude(lat);
-            setLongitude(lng);
-            setManualMode(false);
-          }}
-        />
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-        />
-
-        <Marker
-          key={`${latitude}-${longitude}`} 
-          position={[latitude, longitude]} 
-          icon={userIcon}
-          draggable={manualMode}
-          eventHandlers={{
-            dragend: (e) => {
-              const marker = e.target;
-              const position = marker.getLatLng();
-              setLatitude(position.lat);
-              setLongitude(position.lng);
-              setManualMode(false);
-            }
-          }}
-        >
-          <Tooltip
-            direction="top"
-            offset={[0, -10]}
-            permanent
-            className="marker-label"
-          >
-            You are here
-          </Tooltip>
-        </Marker>
-
-        {reports.map((report) => {
-
-          const icon = getStatusIcon(report.status);
-
-          return (
-            <Marker
-              key={report._id || `${report.latitude}-${report.longitude}`}
-              position={[report.latitude, report.longitude]} 
-              icon={icon}
-            >
-              <Popup>
-                <div style={{ minWidth: '200px' }}>
-                  <h3 style={{ marginBottom: '10px' }}>{report.title}</h3>
-                  <p style={{ marginBottom: '10px' }}>{report.description}</p>
-                  
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    marginBottom: '10px'
-                  }}>
-                    <span><strong>Category:</strong> {report.category}</span>
-                    <span><strong>Status:</strong> {report.status}</span>
-                    <span><strong>Location:</strong> {report.address || 'Address not found'}</span>
-                  </div>
-                  
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    marginTop: '15px',
-                    paddingTop: '10px',
-                    borderTop: '1px solid #eee'
-                  }}>
-                    <UpvoteButton 
-                      reportId={report._id} 
-                      initialUpvotes={report.upvoteCount || 0}
-                    />
-                    <small style={{ color: '#666' }}>
-                      {new Date(report.createdAt).toLocaleDateString()}
-                    </small>
-                  </div>
-                  
-                  {report.photos && report.photos.length > 0 && (
-                    <img 
-                      src={report.photos[0]} 
-                      alt={report.title}
-                      style={{ 
-                        width: '100%', 
-                        maxHeight: '150px',
-                        objectFit: 'cover',
-                        borderRadius: '5px',
-                        marginTop: '10px'
-                      }}
-                    />
-                  )}
-                  {report.reportedBy._id === user?.id && (
-                    <button onClick={() => {
-                      setEditingReport(report);
-                    }}>
-                      Edit
-                    </button>
-                  )}
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
-
-        {accuracy && (
-          <Circle
-            center={[latitude,longitude]}
-            radius={Math.min(accuracy, 500)}
-            pathOptions={{
-              color: "blue",
-              fillColor: "#3388ff",
-              fillOpacity: 0.1,
-              dashArray: '5, 5',
-            }}
-          />
-        )}
-      </MapContainer>
+      
 
       <div>
         {(showReportForm || editingReport) && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 2000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <div style={{
-                    background: 'white',
-                    padding: '20px',
-                    borderRadius: '8px',
-                    maxWidth: '500px',
-                    width: '90%',
-                    maxHeight: '90vh',
-                    overflow: 'auto'
-            }}>
+          <div className='modal-overlay'>
+            <div className='modal-content'>
               <Report
                 editing={editingReport}
                 latitude={latitude}
@@ -566,92 +479,43 @@ function App() {
           </div>
         )}
       </div>
-
-      <button 
-        onClick={() => {
-          setEditingReport(null);
-          setShowReportForm(true);
-        }}
-        style={{
-          position: 'absolute',
-          bottom: '60px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          background: '#28a745',
-          color: 'white',
-          border: 'none',
-          padding: '10px 20px',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          fontFamily: 'Arial, sans-serif'
-        }}
-      >
-        Report Issue Here
-      </button>
       
-
-      {!isLoading && !manualMode && (
-        <button
-          onClick={() => setManualMode(true)}
-          style={{
-            position: 'absolute',
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1000,
-            background: '#ff6b6b',
-            color: 'white',
-            border: 'none',
-            padding: '10px 20px',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontFamily: 'Arial, sans-serif'
+      <footer className='action-bar'>
+        <button 
+          className='btn btn-report'
+          onClick={() => {
+            setEditingReport(null);
+            setShowReportForm(true);
           }}
         >
-          📍 Click to correct the location
+          Report Issue Here
         </button>
-      )}
 
-      {manualMode && (
-        <button
-          onClick={() => setManualMode(false)}
-          style={{
-            position: 'absolute',
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1000,
-            background: '#6c757d',
-            color: 'white',
-            border: 'none',
-            padding: '10px 20px',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontFamily: 'Arial, sans-serif'
-          }}
+        {!isLoading && !manualMode && (
+          <button
+            className='btn btn-manual-mode'
+            onClick={() => setManualMode(true)}
+          >
+            📍 Adjust location
+          </button>
+        )}
+
+        {manualMode && (
+          <button
+            className='btn-cancel-manual'
+            onClick={() => setManualMode(false)}
+          >
+            Cancel Manual Mode
+          </button>
+        )}
+
+        <button 
+          onClick={() => { getLocation(true); }}
+          className="btn btn-primary" 
         >
-          Cancel Manual Mode
+          {isLoading ? 'Getting location...' : 'Refresh Location'}
         </button>
-      )}
-            
-      <button
-        onClick={handleLogout}
-        style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          zIndex: 1000,
-          padding: '8px 16px',
-          background: '#ff4444',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}
-      >
-        Logout
-      </button>
+      </footer>
 
     </div>
   );
