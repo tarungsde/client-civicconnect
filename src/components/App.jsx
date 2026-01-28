@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle, Tooltip, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle, Tooltip, Popup } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import { reportAPI } from '../services/api';
+import { toast, Toaster } from 'sonner';
 import multiColorPin from '../assets/multi-color-pin.png';
 import redPin from '../assets/red-pin.png';
 import yellowPin from '../assets/yellow-pin.png';
@@ -281,6 +282,12 @@ function App() {
           >
             {isLoading ? 'Getting location...' : 'Refresh Location'}
           </button>
+
+          <Toaster 
+            position="top-right"
+            richColors
+          />
+
           <h4 style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             Filters
             <button
@@ -534,17 +541,17 @@ function App() {
                 editing={editingReport}
                 latitude={latitude}
                 longitude={longitude}
-                onSuccess={(updatedReport) => {
-                  console.log('Report saved:', updatedReport);
-                
+                onSuccess={(updatedReport) => {                
                   if (editingReport) {
                     setReports(prevReports => 
                       prevReports.map(report => 
                         report._id === updatedReport._id ? updatedReport : report
                       )
                     );
+                    toast.success('Status updated successfully');
                   } else {
                     setReports(prevReports => [updatedReport, ...prevReports]);
+                    toast.success('Status submitted successfully');
                   }
                   setShowReportForm(false);
                   setEditingReport(null);
