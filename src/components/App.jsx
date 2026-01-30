@@ -5,6 +5,20 @@ import { MapContainer, Marker, TileLayer, useMap, useMapEvents, Circle, Tooltip,
 import { useNavigate } from 'react-router-dom';
 import { reportAPI } from '../services/api';
 import { toast, Toaster } from 'sonner';
+import { 
+  MapPin, 
+  Navigation, 
+  Target, 
+  Filter, 
+  Plus, 
+  LogOut, 
+  RefreshCw, 
+  X,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Ban
+} from 'lucide-react';
 import multiColorPin from '../assets/multi-color-pin.png';
 import redPin from '../assets/red-pin.png';
 import yellowPin from '../assets/yellow-pin.png';
@@ -12,8 +26,6 @@ import greenPin from '../assets/green-pin.png';
 import blackPin from '../assets/black-pin.png';
 import Report from './Report';
 import UpvoteButton from './UpvoteButton';
-
-// delete L.Icon.Default.prototype._getIconUrl;
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -30,10 +42,14 @@ function App() {
   const [manualMode, setManualMode] = useState(false);
   const [showReportForm, setShowReportForm] = useState(false);
   const [editingReport, setEditingReport] = useState(null);
+  const [showToolTip, setShowToolTip] = useState(false);
   const [user, setUser] = useState(null);
   const [reports, setReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const [reportsError, setReportsError] = useState(null);
+  const [showFilters, setShowFilters] = useState(() => {
+  return window.innerWidth >= 1024;
+});
   const [filters, setFilters] = useState({
     status: '',
     category: '',
@@ -42,7 +58,6 @@ function App() {
   });
 
   const watchIdRef = useRef(null);
-
   const navigate = useNavigate();
 
   const userIcon = L.icon({
@@ -59,6 +74,17 @@ function App() {
       setUser(JSON.parse(savedUser));
     }
   }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && !showFilters) {
+        setShowFilters(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [showFilters]); 
 
   const getLocation = (isManualRefresh = false) => {
     if(!navigator.geolocation) {
@@ -129,13 +155,7 @@ function App() {
   const fetchReports = async () => {
     try {
       setLoadingReports(true);
-      const response = await reportAPI.getAllReports(
-        // latitude,
-        // longitude,
-        // radius: 5000
-        filters
-      );
-      console.log(response);
+      const response = await reportAPI.getAllReports(filters);
       setReports(response.data.reports);
     } catch (error) {
       setReportsError('Failed to load reports');
@@ -145,15 +165,19 @@ function App() {
     }
   };
 
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     fetchReports();
-  //   }, 1000);
-  //   return () => clearTimeout(timer);
-  // }, [latitude, longitude]);
+  const showTooltip = () => {
+    setShowToolTip(true);
+    setTimeout(() => {
+      setShowToolTip(false);
+    }, 5000);
+  }
 
   useEffect(() => {
-      fetchReports();
+    showTooltip();
+  }, [latitude, longitude, manualMode]);
+
+  useEffect(() => {
+    fetchReports();
   }, [filters]);
 
   const handleLogout = () => {
@@ -163,8 +187,23 @@ function App() {
     navigate('/');
   };
 
-  const statusOptions = ['', 'All', 'Pending', 'In-progress', 'Resolved', 'Rejected'];
-  const categoryOptions = ['', 'pothole', 'garbage', 'streetlight', 'water', 'traffic', 'other'];
+  const statusOptions = [
+    { value: '', label: 'All Status', icon: <Filter size={16} /> },
+    { value: 'Pending', label: 'Pending', icon: <AlertCircle size={16} /> },
+    { value: 'In-progress', label: 'In Progress', icon: <Clock size={16} /> },
+    { value: 'Resolved', label: 'Resolved', icon: <CheckCircle size={16} /> },
+    { value: 'Rejected', label: 'Rejected', icon: <Ban size={16} /> }
+  ];
+
+  const categoryOptions = [
+    { value: '', label: 'All Categories' },
+    { value: 'pothole', label: 'Pothole' },
+    { value: 'garbage', label: 'Garbage' },
+    { value: 'streetlight', label: 'Street Light' },
+    { value: 'water', label: 'Water' },
+    { value: 'traffic', label: 'Traffic' },
+    { value: 'other', label: 'Other' }
+  ];
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -217,93 +256,294 @@ function App() {
     })
   };
 
-  // Helper function to get the right icon
   const getStatusIcon = (status) => {
     const normalizedStatus = status?.toLowerCase();
     return statusIcons[normalizedStatus] || statusIcons['default'];
   };
 
+  const StatusIndicator = ({ status }) => {
+    const getStatusConfig = (status) => {
+      switch(status?.toLowerCase()) {
+        case 'pending': return { color: '#ef4444', icon: <AlertCircle size={14} />, label: 'Pending' };
+        case 'in-progress': return { color: '#f59e0b', icon: <Clock size={14} />, label: 'In Progress' };
+        case 'resolved': return { color: '#10b981', icon: <CheckCircle size={14} />, label: 'Resolved' };
+        case 'rejected': return { color: '#6b7280', icon: <Ban size={14} />, label: 'Rejected' };
+        default: return { color: '#6b7280', icon: null, label: status };
+      }
+    };
+
+    const config = getStatusConfig(status);
+    
+    return (
+      <span 
+        className="status-badge" 
+        style={{ 
+          backgroundColor: `${config.color}15`,
+          borderColor: config.color,
+          color: config.color
+        }}
+      >
+        {config.icon}
+        {config.label}
+      </span>
+    );
+  };
+
   return (
     <div className='app-shell'>
+      {/* Header */}
+      <header className='app-header'>
+        <div className='header-content'>
+          <div className='brand-section'>
+            <div className='logo-container'>
+              <MapPin className='logo-icon' />
+              <h1 className='app-title'>CivicConnect</h1>
+            </div>
+            <p className='app-subtitle'>Community Issue Reporting Platform</p>
+          </div>
+          
+          <div className='user-section'>
+            {user && (
+              <div className='user-info'>
+                <div className='user-avatar'>
+                  {user.name?.charAt(0).toUpperCase()}
+                </div>
+                <span className='user-name'>{user.name}</span>
+              </div>
+            )}
+            <button
+              className='btn btn-logout'
+              onClick={handleLogout}
+            >
+              <LogOut size={18} />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </header>
 
-      <div className='app-header'>
-        <h1 className='app-title'>Civic Connect</h1>
-        <button
-          className='btn btn-logout'
-          onClick={handleLogout}
-        >
-          Logout
-        </button>
-      </div>
+      {/* Main Content */}
+      <div className='main-content'>
+        {/* Left Panel - Filters & Reports */}
+        <aside className={`sidebar ${showFilters ? 'open' : ''}`}>
+          <div className='sidebar-header'>
+            <div className='header-title'>
+              <Filter size={20} />
+              <h3>Filters & Reports</h3>
+            </div>
+            <button 
+              className='close-filters'
+              onClick={() => setShowFilters(false)}
+            >
+              <X size={20} />
+            </button>
+          </div>
 
-      <div className='app-body'>
-        <aside className='sidebar'> 
-          <div className='filter-container'>
-            <h4 className="filter-header">
-              Filters
-              <button
-                onClick={clearFilters}
-                className='btn-clear'
-              >
-                Clear
-              </button>
-            </h4>
-            
-            <div className='filter-group'>
-              <label className='filter-label'>Status</label>
-              <select
-                className='filter-select'
-                value={filters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
-              >
-                {statusOptions.map(status => (
-                  <option key={status} value={status}>
-                    {status === '' ? 'Select Status' : status}
-                  </option>
-                ))}
-              </select>
+          <div className='sidebar-content'>
+            {/* Quick Stats */}
+            <div className='stats-grid'>
+              <div className='stat-card'>
+                <div className='stat-icon pending'>
+                  <AlertCircle size={20} />
+                </div>
+                <div className='stat-content'>
+                  <span className='stat-value'>{reports.filter(r => r.status === 'Pending').length}</span>
+                  <span className='stat-label'>Pending</span>
+                </div>
+              </div>
+              <div className='stat-card'>
+                <div className='stat-icon in-progress'>
+                  <Clock size={20} />
+                </div>
+                <div className='stat-content'>
+                  <span className='stat-value'>{reports.filter(r => r.status === 'In-progress').length}</span>
+                  <span className='stat-label'>In Progress</span>
+                </div>
+              </div>
+              <div className='stat-card'>
+                <div className='stat-icon resolved'>
+                  <CheckCircle size={20} />
+                </div>
+                <div className='stat-content'>
+                  <span className='stat-value'>{reports.filter(r => r.status === 'Resolved').length}</span>
+                  <span className='stat-label'>Resolved</span>
+                </div>
+              </div>
             </div>
 
-            <div className='filter-group'>
-              <label className='filter-label'>Category</label>
-              <select
-                className='filter-select'
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-              >
-                {categoryOptions.map(category => (
-                  <option key={category} value={category}>
-                    {category === '' ? 'All Categories' : category}
-                  </option>
-                ))}
-              </select>
+            {/* Filters Section */}
+            <div className='filter-section'>
+              <div className='rsection-header'>
+                <h4>Filter Reports</h4>
+                <button
+                  onClick={clearFilters}
+                  className='btn-clear'
+                >
+                  Clear All
+                </button>
+              </div>
+              
+              <div className='filter-grid'>
+                <div className='filter-group'>
+                  <label className='filter-label'>
+                    <AlertCircle size={16} />
+                    Status
+                  </label>
+                  <select
+                    className='filter-select'
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                  >
+                    {statusOptions.map(({ value, label, icon }) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className='filter-group'>
+                  <label className='filter-label'>
+                    <Filter size={16} />
+                    Category
+                  </label>
+                  <select
+                    className='filter-select'
+                    value={filters.category}
+                    onChange={(e) => handleFilterChange('category', e.target.value)}
+                  >
+                    {categoryOptions.map(({ value, label }) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className='filter-group'>
+                  <label className='filter-label'>Date From</label>
+                  <input
+                    type="date"
+                    className='date-input'
+                    value={filters.dateFrom}
+                    onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                  />
+                </div>
+
+                <div className='filter-group'>
+                  <label className='filter-label'>Date To</label>
+                  <input
+                    type="date"
+                    className='date-input'
+                    value={filters.dateTo}
+                    onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className='filter-group'>
-              <label className='filter-label'>Date From</label>
-              <input
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-              />
-            </div>
-
-            <div className='filter-group'>
-              <label className='filter-label'>Date To</label>
-              <input
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-              />
+            {/* Reports List */}
+            <div className='reports-section'>
+              <div className='section-header'>
+                <h4>Recent Reports ({reports.length})</h4>
+              </div>
+              <div className='reports-list'>
+                {loadingReports ? (
+                  <div className='loading-reports'>Loading reports...</div>
+                ) : reportsError ? (
+                  <div className='error-message'>{reportsError}</div>
+                ) : reports.length === 0 ? (
+                  <div className='empty-state'>
+                    <AlertCircle size={48} />
+                    <p>No reports found</p>
+                    <small>Try adjusting your filters</small>
+                  </div>
+                ) : (
+                  reports.slice(reports.length - 5, reports.length).map(report => (
+                    <div 
+                      key={report._id} 
+                      className='report-item'
+                      onClick={() => {
+                        // Optional: Fly to report location on map
+                      }}
+                    >
+                      <div className='report-header'>
+                        <h5 className='report-title'>{report.title}</h5>
+                        <StatusIndicator status={report.status} />
+                      </div>
+                      <p className='report-description'>{report.description.substring(0, 80)}...</p>
+                      <div className='report-footer'>
+                        <span className='report-category'>{report.category}</span>
+                        <span className='report-date'>
+                          {new Date(report.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </aside>
 
+        {/* Map Area */}
         <main className='map-area'>
+          {/* Map Controls Overlay */}
+          <div className={`map-controls ${showFilters ? 'sidebar-open' : ''}`}>
+
+            {!showFilters && (
+              <button 
+                className='control-btn filter-toggle'
+                onClick={() => setShowFilters(true)}
+              >
+                <Filter size={20} />
+              </button>
+            )}
+            
+            <div className='location-controls'>
+              <button 
+                onClick={() => { getLocation(true); }}
+                className='control-btn location-btn'
+                disabled={isLoading}
+              >
+                <RefreshCw size={20} className={isLoading ? 'spinning' : ''} />
+              </button>
+              
+              {!isLoading && !manualMode && (
+                <button
+                  className='control-btn manual-mode-btn'
+                  onClick={() => setManualMode(true)}
+                >
+                  <Target size={20} />
+                </button>
+              )}
+
+              {manualMode && (
+                <button
+                  className='control-btn cancel-btn'
+                  onClick={() => setManualMode(false)}
+                >
+                  <X size={20} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Accuracy Circle */}
+          {accuracy && (
+            <div className={`accuracy-indicator ${showFilters ? 'sidebar-open' : ''}`}>
+              <Navigation size={16} />
+              <span>Accuracy: {Math.round(accuracy)} meters</span>
+            </div>
+          )}
+
+
+          {/* Map Container */}
           <MapContainer 
             className='leaflet-container'
             center={[latitude, longitude]} 
             zoom={15}
+            zoomControl={false}
           >
             <ChangeView 
               center={[latitude, longitude]} 
@@ -335,14 +575,16 @@ function App() {
                 }
               }}
             >
-              <Tooltip
-                direction="top"
-                offset={[0, -10]}
-                permanent
-                className="marker-label"
-              >
-                You are here
-              </Tooltip>
+              {showToolTip && (
+                <Tooltip
+                  direction="top"
+                  offset={[0, -42]}
+                  permanent
+                  className="marker-label"
+                >
+                  Your Location
+                </Tooltip>
+              )}
             </Marker>
 
             {reports.map((report) => {
@@ -356,53 +598,61 @@ function App() {
                   <Popup>
                     <div className='report-popup'>
                       <div className='popup-header'>
-                        <h3>{report.title}</h3>
+                        <div className='popup-title-section'>
+                          <h3>{report.title}</h3>
+                          <StatusIndicator status={report.status} />
+                        </div>
                         <p className='popup-description'>{report.description}</p>
                       </div>
                       
                       <div className='popup-details'>
-                        <div className="detail-item">
+                        <div className="detail-row">
                           <span className="detail-label">Category:</span>
-                          <span>{report.category}</span>
+                          <span className="detail-value">{report.category}</span>
                         </div>
-                        <div className="detail-item">
-                          <span className="detail-label">Status:</span>
-                          <span className={`status-badge status-${report.status?.toLowerCase()}`}>
-                            {report.status}
-                          </span>
-                        </div>
-                        <div className="detail-item">
+                        <div className="detail-row">
                           <span className="detail-label">Location:</span>
-                          <span>{report.address || 'Address not found'}</span>
+                          <span className="detail-value">{report.address || 'Address not found'}</span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="detail-label">Reported by:</span>
+                          <span className="detail-value">{report.reportedBy?.name || 'Anonymous'}</span>
                         </div>
                       </div>
 
                       <div className="popup-footer">
-                        <UpvoteButton 
-                          reportId={report._id} 
-                          initialUpvotes={report.upvoteCount || 0}
-                        />
-                        <span className="popup-date">
-                          {new Date(report.createdAt).toLocaleDateString()}
-                        </span>
+                        <div className='upvote-section'>
+                          <UpvoteButton 
+                            reportId={report._id} 
+                            initialUpvotes={report.upvoteCount || 0}
+                          />
+                        </div>
+                        <div className='popup-actions'>
+                          <span className="popup-date">
+                            {new Date(report.createdAt).toLocaleDateString()}
+                          </span>
+                          {report.reportedBy._id === user?.id && (
+                            <button 
+                              onClick={() => {
+                                setEditingReport(report);
+                                setShowReportForm(true);
+                              }}
+                              className='edit-btn'
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </div>
                       </div>
                       
                       {report.photos && report.photos.length > 0 && (
-                        <img 
-                          src={report.photos[0]} 
-                          alt={report.title}
-                          className='popup-image'
-                        />
-                      )}
-                      {report.reportedBy._id === user?.id && (
-                        <button 
-                          onClick={() => {
-                            setEditingReport(report);
-                          }}
-                          className='btn btn-sm btn-primary popup-edit-btn'
-                        >
-                          Edit Report
-                        </button>
+                        <div className='popup-image-container'>
+                          <img 
+                            src={report.photos[0]} 
+                            alt={report.title}
+                            className='popup-image'
+                          />
+                        </div>
                       )}
                     </div>
                   </Popup>
@@ -415,7 +665,7 @@ function App() {
                 center={[latitude,longitude]}
                 radius={Math.min(accuracy, 500)}
                 pathOptions={{
-                  color: "blue",
+                  color: "#3388ff",
                   fillColor: "#3388ff",
                   fillOpacity: 0.1,
                   dashArray: '5, 5',
@@ -424,99 +674,84 @@ function App() {
             )}
           </MapContainer>
         </main>
-
       </div>
 
+      {/* Floating Action Button */}
+      <button 
+        className='fab'
+        onClick={() => {
+          setEditingReport(null);
+          setShowReportForm(true);
+        }}
+      >
+        <Plus size={24} />
+      </button>
+
+      {/* Location Status Toast */}
       {isLoading && (
-        <div className='loading-overlay'>
-          Getting your location...
+        <div className='toast toast-loading'>
+          <Navigation size={20} className='spinning' />
+          <span>Getting your location...</span>
         </div>
       )}
       
       {locationError && !isLoading && (
-        <div className='error-overlay'>
-          Unable to get your location. Showing default location instead.
+        <div className='toast toast-error'>
+          <AlertCircle size={20} />
+          <span>Unable to get location. Showing default location.</span>
         </div>
       )}
 
+      {manualMode && (
+        <div className='toast toast-info'>
+          <Target size={20} />
+          <span>Click on map to set location</span>
+        </div>
+      )}
+
+      {/* Modals */}
       <Toaster 
-          position="top-right"
-          richColors
+        position="top-right"
+        richColors
+        toastOptions={{
+          style: {
+            background: 'var(--surface)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border)',
+          },
+        }}
       />
 
-      
-
-      <div>
-        {(showReportForm || editingReport) && (
-          <div className='modal-overlay'>
-            <div className='modal-content'>
-              <Report
-                editing={editingReport}
-                latitude={latitude}
-                longitude={longitude}
-                onSuccess={(updatedReport) => {                
-                  if (editingReport) {
-                    setReports(prevReports => 
-                      prevReports.map(report => 
-                        report._id === updatedReport._id ? updatedReport : report
-                      )
-                    );
-                    toast.success('Status updated successfully');
-                  } else {
-                    setReports(prevReports => [updatedReport, ...prevReports]);
-                    toast.success('Status submitted successfully');
-                  }
-                  setShowReportForm(false);
-                  setEditingReport(null);
-                  }}
-                onCancel={() => {
-                  setShowReportForm(false);
-                  setEditingReport(null);
-                  }
+      {(showReportForm || editingReport) && (
+        <div className='modal-overlay'>
+          <div className='modal-container'>
+            <Report
+              editing={editingReport}
+              latitude={latitude}
+              longitude={longitude}
+              onSuccess={(updatedReport) => {                
+                if (editingReport) {
+                  setReports(prevReports => 
+                    prevReports.map(report => 
+                      report._id === updatedReport._id ? updatedReport : report
+                    )
+                  );
+                  toast.success('Report updated successfully');
+                } else {
+                  setReports(prevReports => [updatedReport, ...prevReports]);
+                  toast.success('Report submitted successfully');
                 }
-              />
-            </div>
+                setShowReportForm(false);
+                setEditingReport(null);
+              }}
+              onCancel={() => {
+                setShowReportForm(false);
+                setEditingReport(null);
+              }}
+            />
           </div>
-        )}
-      </div>
-      
-      <footer className='action-bar'>
-        <button 
-          className='btn btn-report'
-          onClick={() => {
-            setEditingReport(null);
-            setShowReportForm(true);
-          }}
-        >
-          Report Issue Here
-        </button>
-
-        {!isLoading && !manualMode && (
-          <button
-            className='btn btn-manual-mode'
-            onClick={() => setManualMode(true)}
-          >
-            📍 Adjust location
-          </button>
-        )}
-
-        {manualMode && (
-          <button
-            className='btn-cancel-manual'
-            onClick={() => setManualMode(false)}
-          >
-            Cancel Manual Mode
-          </button>
-        )}
-
-        <button 
-          onClick={() => { getLocation(true); }}
-          className="btn btn-primary" 
-        >
-          {isLoading ? 'Getting location...' : 'Refresh Location'}
-        </button>
-      </footer>
-
+        </div>
+      )}
     </div>
   );
 }

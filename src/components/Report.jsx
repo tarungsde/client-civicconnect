@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { reportAPI } from '../services/api';
+import { 
+  X, 
+  Camera, 
+  MapPin, 
+  AlertCircle, 
+  CheckCircle, 
+  Loader2,
+  Image as ImageIcon,
+  Tag,
+  AlertTriangle,
+  FileText,
+  ChevronDown,
+  Trash2,
+  Globe
+} from 'lucide-react';
 
 function ReportCard({
   editing,
@@ -8,9 +23,20 @@ function ReportCard({
   onSuccess,
   onCancel 
 }) {
+  const categories = [
+    { value: 'pothole', label: 'Pothole', icon: '🕳️', color: '#8B4513' },
+    { value: 'garbage', label: 'Garbage', icon: '🗑️', color: '#4CAF50' },
+    { value: 'streetlight', label: 'Street Light', icon: '💡', color: '#FFC107' },
+    { value: 'water', label: 'Water Issue', icon: '💧', color: '#2196F3' },
+    { value: 'traffic', label: 'Traffic', icon: '🚦', color: '#FF5722' },
+    { value: 'other', label: 'Other', icon: '📋', color: '#9C27B0' }
+  ];
 
-  const categories = ['pothole', 'garbage', 'streetlight', 'water', 'traffic', 'other'];
-  const urgencies = ['low', 'medium', 'high'];
+  const urgencies = [
+    { value: 'low', label: 'Low Priority', color: '#10B981', description: 'Minor inconvenience' },
+    { value: 'medium', label: 'Medium Priority', color: '#F59E0B', description: 'Needs attention soon' },
+    { value: 'high', label: 'High Priority', color: '#EF4444', description: 'Requires immediate action' }
+  ];
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -21,6 +47,8 @@ function ReportCard({
   const [preview, setPreview] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [address, setAddress] = useState('');
+  const [charCount, setCharCount] = useState({ title: 0, description: 0 });
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (editing) {
@@ -28,6 +56,10 @@ function ReportCard({
       setDescription(editing.description || '');
       setCategory(editing.category || '');
       setUrgency(editing.urgency || 'medium');
+      setCharCount({
+        title: editing.title?.length || 0,
+        description: editing.description?.length || 0
+      });
       setPreview([]);
       setSelectedFiles([]);
     } else {
@@ -35,6 +67,7 @@ function ReportCard({
       setDescription('');
       setCategory('');
       setUrgency('medium');
+      setCharCount({ title: 0, description: 0 });
       setPreview([]);
       setSelectedFiles([]);
     }
@@ -51,7 +84,6 @@ function ReportCard({
       fetchAddress(latitude, longitude);
     }
   }, [latitude, longitude]);
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,7 +109,6 @@ function ReportCard({
     }
 
     try {
-
       let photoUrls = [];
       if (editing && editing.photos) {
         photoUrls = [...editing.photos];
@@ -111,25 +142,51 @@ function ReportCard({
       }
 
       if (!editing) {
-        setTitle('');
-        setDescription('');
-        setCategory('');
-        setUrgency('medium');
-        setPreview([]);
-        setSelectedFiles([]);
+        resetForm();
       }
     } catch (error) {
       console.error('Report submission error:', error);
-      alert('Failed to submit report. Please try again.');
+      setError(error.response?.data?.message || 'Failed to submit report. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
 
-  }
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setCategory('');
+    setUrgency('medium');
+    setCharCount({ title: 0, description: 0 });
+    setPreview([]);
+    setSelectedFiles([]);
+    setError('');
+  };
 
   const handleImageInputs = (e) => {
     const files = Array.from(e.target.files);
+    processFiles(files);
+  };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    processFiles(files);
+  };
+
+  const processFiles = (files) => {
     const validFiles = files.filter(file => {
       if (!file.type.startsWith('image/')) {
         alert(`${file.name} is not an image file`);
@@ -154,27 +211,32 @@ function ReportCard({
       URL.createObjectURL(file)
     );
 
-    setPreview(imageUrls);
-    setSelectedFiles(validFiles);
-  }
+    setPreview(prev => [...prev, ...imageUrls]);
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+  };
 
   const uploadImages = async (files) => {
     const formData = new FormData();
     
     files.forEach(file => {
-      formData.append('images', file); // 'images' matches backend
+      formData.append('images', file);
     });
     
     try {
       const response = await reportAPI.uploadImages(formData);
-      return response.data.urls; // Array of image URLs
+      return response.data.urls;
     } catch (error) {
       console.error('Image upload failed:', error);
       throw new Error('Failed to upload images');
     }
   };
 
-  const removeImage = (index) => {
+  const removeImage = (index, isExisting = false) => {
+    if (isExisting) {
+      alert('Existing photos cannot be removed when editing. You can only add new photos.');
+      return;
+    }
+    
     URL.revokeObjectURL(preview[index]);
     const newPreview = [...preview];
     newPreview.splice(index, 1);
@@ -187,7 +249,9 @@ function ReportCard({
 
   const fetchAddress = async (lat, lon) => {
     try {
-      const result = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+      const result = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+      );
       const data = await result.json();
       if (data && data.display_name) {
         setAddress(data.display_name);
@@ -198,235 +262,372 @@ function ReportCard({
       console.error('Failed to fetch address:', error);
       setAddress('Address not found');
     }
-  }
+  };
+
+  const getSelectedCategory = () => {
+    return categories.find(c => c.value === category);
+  };
+
+  const getSelectedUrgency = () => {
+    return urgencies.find(u => u.value === urgency);
+  };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>{editing ? 'Edit Report' : 'Submit New Report'}</h2>
-      
-      {error && <div style={{color: 'red'}}>{error}</div>}
-
-      <div className='form-group'>
-        <label htmlFor="title">Title</label>
-        <input 
-          id='title'
-          type='text'
-          placeholder='Brief title of the issue'
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          disabled={loading}
-          maxLength={50}
-          required
-        />
-      </div>
-
-      <div className='form-group'>
-        <label htmlFor="description">Description</label>
-        <textarea 
-          id='description'
-          placeholder="Detailed description about the issue."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          disabled={loading}
-          rows={4}
-          maxLength={500}
-          required
-        />
-      </div>
-
-      <div className='form-group'>
-        <label htmlFor="category">Category</label>
-        <select
-          id='category'
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          disabled={loading}
-          required
-        >
-          <option value="">Select category</option>
-          {categories.map((c, index) => (
-            <option 
-              id={c}
-              key={index}
-              value={c}
-            >
-              {c}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className='form-group'>
-        <label htmlFor="urgency">Urgency</label>
-        <select 
-          id='urgency'
-          value={urgency}
-          onChange={(e) => setUrgency(e.target.value)}
-        >
-          <option value="">Select a category</option>
-          {urgencies.map((u, index) => (
-            <option 
-              id={u}
-              key={index}
-              value={u}
-            >
-              {u}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {editing && editing.photos && editing.photos.length > 0 && (
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-            Existing Photos ({editing.photos.length})
-          </label>
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            {editing.photos.map((photo, index) => (
-              <div key={index} style={{ position: 'relative' }}>
-                <img
-                  src={photo}
-                  alt={`Existing ${index}`}
-                  style={{ 
-                    width: 80, 
-                    height: 80, 
-                    objectFit: 'cover',
-                    borderRadius: '5px',
-                    border: '2px solid #ddd'
-                  }}
-                />
-                <div style={{
-                  fontSize: '10px',
-                  textAlign: 'center',
-                  marginTop: '2px',
-                  color: '#666'
-                }}>
-                  Existing
-                </div>
-              </div>
-            ))}
+    <div className="report-modal">
+      <div className="modal-header">
+        <div className="rheader-content">
+          <div className="title-section">
+            <h2>
+              {editing ? (
+                <>
+                  <AlertCircle size={24} />
+                  Edit Report
+                </>
+              ) : (
+                <>
+                  <FileText size={24} />
+                  Submit New Report
+                </>
+              )}
+            </h2>
+            <p className="modal-subtitle">
+              {editing ? 'Update your existing report' : 'Help improve your community'}
+            </p>
           </div>
-          <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
-            Note: You cannot remove existing photos. Add new ones below.
-          </small>
+          <button 
+            type="button" 
+            className="close-btn"
+            onClick={onCancel}
+            disabled={loading}
+          >
+            <X size={24} />
+          </button>
         </div>
-      )}
+      </div>
 
+      <form onSubmit={handleSubmit} className="report-form">
+        {error && (
+          <div className="rerror-message">
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
+        )}
 
-      <div style={{ marginBottom: '15px' }}>
-        <label htmlFor="issue-image" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-          {editing ? 'Add More Images' : 'Upload Images'} (Optional)
-        </label>
-        <input 
-          id='issue-image' 
-          type='file' 
-          accept='image/*'
-          onChange={handleImageInputs}
-          multiple
-          style={{
-            width: '100%',
-            padding: '5px',
-            marginBottom: '10px'
-          }}
-        />
+        {/* Title Input */}
+        <div className='form-section'>
+          <div className="section-header">
+            <label className='form-label'>
+              <FileText size={18} />
+              Issue Title
+            </label>
+            <span className={`char-count ${charCount.title > 45 ? 'warning' : ''}`}>
+              {charCount.title}/50
+            </span>
+          </div>
+          <input 
+            type='text'
+            placeholder='Brief, descriptive title of the issue'
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setCharCount(prev => ({ ...prev, title: e.target.value.length }));
+            }}
+            disabled={loading}
+            maxLength={50}
+            required
+            className="form-input"
+          />
+          <div className="input-hint">
+            Keep it concise and descriptive (e.g., "Large pothole on Main Street")
+          </div>
+        </div>
 
-        {preview.length > 0 && (
-          <>
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px", flexWrap: "wrap" }}>
-              {preview.map((src, index) => (
-                <div key={index} style={{ position: 'relative' }}>
-                  <img
-                    src={src}
-                    alt={`Preview ${index}`}
-                    style={{ 
-                      width: 80, 
-                      height: 80, 
-                      objectFit: 'cover',
-                      borderRadius: '5px'
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    style={{
-                      position: 'absolute',
-                      top: -8,
-                      right: -8,
-                      background: 'red',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: 20,
-                      height: 20,
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
+        {/* Description Input */}
+        <div className='form-section'>
+          <div className="section-header">
+            <label className='form-label'>
+              <FileText size={18} />
+              Detailed Description
+            </label>
+            <span className={`char-count ${charCount.description > 450 ? 'warning' : ''}`}>
+              {charCount.description}/500
+            </span>
+          </div>
+          <textarea 
+            placeholder="Provide detailed information about the issue. Include location specifics, size, potential hazards, and any other relevant details."
+            value={description}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              setCharCount(prev => ({ ...prev, description: e.target.value.length }));
+            }}
+            disabled={loading}
+            rows={5}
+            maxLength={500}
+            required
+            className="form-textarea"
+          />
+          <div className="input-hint">
+            The more details you provide, the easier it is for authorities to address the issue.
+          </div>
+        </div>
+
+        {/* Category & Urgency Grid */}
+        <div className="form-grid">
+          {/* Category Selector */}
+          <div className='form-section'>
+            <label className='form-label'>
+              <Tag size={18} />
+              Category
+            </label>
+            <div className="category-grid">
+              {categories.map((cat) => (
+                <button
+                  type="button"
+                  key={cat.value}
+                  className={`category-option ${category === cat.value ? 'selected' : ''}`}
+                  onClick={() => setCategory(cat.value)}
+                  disabled={loading}
+                  style={{
+                    '--category-color': cat.color
+                  }}
+                >
+                  <span className="category-icon">{cat.icon}</span>
+                  <span className="category-label">{cat.label}</span>
+                </button>
               ))}
             </div>
-            <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
-              {preview.length} new image(s) selected
-            </small>
-          </>
-        )}
-      </div>
+            {category && (
+              <div className="selected-indicator">
+                <span className="selected-icon" style={{ backgroundColor: getSelectedCategory()?.color }}>
+                  {getSelectedCategory()?.icon}
+                </span>
+                <span className="selected-text">
+                  Selected: <strong>{getSelectedCategory()?.label}</strong>
+                </span>
+              </div>
+            )}
+          </div>
 
-      <div style={{ marginBottom: '20px', padding: '10px', background: '#f8f9fa', borderRadius: '4px' }}>
-        <small style={{ color: '#666' }}>
-          <strong>Location:</strong> {address || 'Fetching address...'}
-          {editing && (
-            <div style={{ marginTop: '5px' }}>
-              <em>Location cannot be changed when editing a report.</em>
+          {/* Urgency Selector */}
+          <div className='form-section'>
+            <label className='form-label'>
+              <AlertTriangle size={18} />
+              Urgency Level
+            </label>
+            <div className="urgency-grid">
+              {urgencies.map((urg) => (
+                <button
+                  type="button"
+                  key={urg.value}
+                  className={`urgency-option ${urgency === urg.value ? 'selected' : ''}`}
+                  onClick={() => setUrgency(urg.value)}
+                  disabled={loading}
+                  style={{
+                    '--urgency-color': urg.color
+                  }}
+                >
+                  <div className="urgency-dot" style={{ backgroundColor: urg.color }} />
+                  <div className="urgency-content">
+                    <span className="urgency-label">{urg.label}</span>
+                    <span className="urgency-description">{urg.description}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Image Upload Section */}
+        <div className='form-section'>
+          <div className="section-header">
+            <label className='form-label'>
+              <Camera size={18} />
+              Photos
+              <span className="optional-badge">Optional</span>
+            </label>
+            <span className="image-count">
+              {preview.length + (editing?.photos?.length || 0)}/5 images
+            </span>
+          </div>
+
+          {/* Existing Photos */}
+          {editing && editing.photos && editing.photos.length > 0 && (
+            <div className="existing-photos-section">
+              <div className="photos-header">
+                <h4>Existing Photos</h4>
+                <small className="photo-count">({editing.photos.length} image(s))</small>
+              </div>
+              <div className="photos-grid">
+                {editing.photos.map((photo, index) => (
+                  <div key={`existing-${index}`} className="photo-item existing">
+                    <img
+                      src={photo}
+                      alt={`Existing ${index}`}
+                      className="photo-preview"
+                    />
+                    <div className="photo-label">
+                      <CheckCircle size={12} />
+                      <span>Existing</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="remove-photo-btn"
+                      onClick={() => removeImage(index, true)}
+                      title="Cannot remove existing photos"
+                      disabled
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-        </small>
-      </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={loading}
-          style={{
-            padding: '10px 20px',
-            background: '#6c757d',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            opacity: loading ? 0.6 : 1
-          }}
-        >
-          Cancel
-        </button>
-        
-        <button 
-          type="submit" 
-          disabled={loading}
-          style={{
-            padding: '10px 20px',
-            background: editing ? '#007bff' : '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            opacity: loading ? 0.6 : 1
-          }}
-        >
-          {loading ? 'Saving...' : (editing ? 'Update Report' : 'Submit Report')}
-        </button>
-      </div>
-    </form>
+          {/* Upload Area */}
+          <div 
+            className={`upload-area ${isDragging ? 'dragging' : ''} ${(preview.length + (editing?.photos?.length || 0)) >= 5 ? 'disabled' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <input 
+              id='issue-image' 
+              type='file' 
+              accept='image/*'
+              onChange={handleImageInputs}
+              multiple
+              disabled={loading || (preview.length + (editing?.photos?.length || 0)) >= 5}
+              className="file-input"
+            />
+            
+            <div className="upload-content">
+              <Camera size={48} className="upload-icon" />
+              <div className="upload-text">
+                <h4>Drag & drop images here</h4>
+                <p>or click to browse</p>
+              </div>
+              <p className="upload-hint">
+                Upload up to 5 images (max 5MB each)
+                <br />
+                Supported formats: JPG, PNG, GIF
+              </p>
+            </div>
+          </div>
+
+          {/* Preview Grid */}
+          {preview.length > 0 && (
+            <div className="preview-section">
+              <h4>New Photos ({preview.length})</h4>
+              <div className="photos-grid">
+                {preview.map((src, index) => (
+                  <div key={`new-${index}`} className="photo-item new">
+                    <img
+                      src={src}
+                      alt={`Preview ${index}`}
+                      className="photo-preview"
+                    />
+                    <button
+                      type="button"
+                      className="remove-photo-btn"
+                      onClick={() => removeImage(index)}
+                      disabled={loading}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Location Information */}
+        <div className='form-section'>
+          <label className='form-label'>
+            <MapPin size={18} />
+            Location Information
+          </label>
+          <div className="location-card">
+            <div className="location-header">
+              <Globe size={20} />
+              <h4>Report Location</h4>
+            </div>
+            <div className="location-details">
+              <div className="coordinate-item">
+                <span className="coordinate-label">Latitude:</span>
+                <span className="coordinate-value">{editing ? editing.latitude : latitude}</span>
+              </div>
+              <div className="coordinate-item">
+                <span className="coordinate-label">Longitude:</span>
+                <span className="coordinate-value">{editing ? editing.longitude : longitude}</span>
+              </div>
+              <div className="address-item">
+                <span className="address-label">Address:</span>
+                <span className="address-value">{editing?.address || address || 'Fetching address...'}</span>
+              </div>
+            </div>
+            {editing && (
+              <div className="location-note">
+                <AlertCircle size={16} />
+                <span>Location cannot be changed when editing a report</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Form Actions */}
+        <div className="form-actions">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="rbtn rbtn-secondary"
+          >
+            <X size={18} />
+            <span>Cancel</span>
+          </button>
+          
+          <button 
+            type="submit" 
+            disabled={loading}
+            className={`rbtn rbtn-primary ${loading ? 'loading' : ''}`}
+          >
+            {loading ? (
+              <>
+                <Loader2 size={18} className="spinner" />
+                <span>Processing...</span>
+              </>
+            ) : editing ? (
+              <>
+                <CheckCircle size={18} />
+                <span>Update Report</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle size={18} />
+                <span>Submit Report</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Form Footer */}
+        <div className="form-footer">
+          <div className="footer-note">
+            <AlertCircle size={16} />
+            <span>Your report will be reviewed by local authorities. You'll receive updates on its status.</span>
+          </div>
+          <div className="privacy-note">
+            <span>By submitting, you agree to our </span>
+            <a href="#" className="privacy-link">Privacy Policy</a>
+            <span> and </span>
+            <a href="#" className="privacy-link">Terms of Service</a>
+          </div>
+        </div>
+      </form>
+    </div>
   );
-  
 }
 
 export default ReportCard;
