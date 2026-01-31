@@ -1,205 +1,267 @@
 import React, { useState } from 'react';
+import { 
+  Eye, 
+  MoreVertical,
+  AlertCircle,
+  Clock,
+  CheckCircle,
+  Ban,
+  ChevronUp,
+  ChevronDown,
+  Filter
+} from 'lucide-react';
 
-function ReportTable({ reports, onStatusUpdate }) {
-  const [expandedReport, setExpandedReport] = useState(null);
-  const [statusUpdate, setStatusUpdate] = useState({});
+function ReportTable({ reports, onStatusUpdate, loading }) {
+  const [sortField, setSortField] = useState('createdAt');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [expandedRow, setExpandedRow] = useState(null);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Pending': return '#ffc107';
-      case 'In-progress': return '#17a2b8';
-      case 'Resolved': return '#28a745';
-      case 'Rejected': return '#dc3545';
-      default: return '#6c757d';
+  const statusOptions = [
+    { value: 'Pending', label: 'Pending', color: '#ef4444' },
+    { value: 'In-progress', label: 'In Progress', color: '#f59e0b' },
+    { value: 'Resolved', label: 'Resolved', color: '#10b981' },
+    { value: 'Rejected', label: 'Rejected', color: '#6b7280' }
+  ];
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
     }
   };
 
-  const handleStatusChange = (reportId, status) => {
-    setStatusUpdate(prev => ({ ...prev, [reportId]: status }));
+  const sortedReports = [...reports].sort((a, b) => {
+    const aValue = a[sortField];
+    const bValue = b[sortField];
+    
+    if (sortField === 'createdAt') {
+      return sortDirection === 'asc' 
+        ? new Date(aValue) - new Date(bValue)
+        : new Date(bValue) - new Date(aValue);
+    }
+    
+    if (typeof aValue === 'string') {
+      return sortDirection === 'asc'
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    }
+    
+    return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+  });
+
+  const StatusBadge = ({ status }) => {
+    const option = statusOptions.find(opt => opt.value === status);
+    if (!option) return null;
+    
+    return (
+      <span className="table-status-badge" style={{ 
+        backgroundColor: `${option.color}15`,
+        borderColor: option.color,
+        color: option.color
+      }}>
+        {option.label}
+      </span>
+    );
   };
 
-  const saveStatusUpdate = (reportId) => {
-    if (statusUpdate[reportId]) {
-      onStatusUpdate(reportId, { status: statusUpdate[reportId] });
-      setStatusUpdate(prev => ({ ...prev, [reportId]: '' }));
-    }
+  const UrgencyBadge = ({ urgency }) => {
+    const colorMap = {
+      'high': '#ef4444',
+      'medium': '#f59e0b',
+      'low': '#10b981'
+    };
+    
+    return (
+      <span className="urgency-badge" style={{ 
+        backgroundColor: `${colorMap[urgency] || '#6b7280'}15`,
+        borderColor: colorMap[urgency] || '#6b7280',
+        color: colorMap[urgency] || '#6b7280'
+      }}>
+        {urgency}
+      </span>
+    );
   };
+
+  const SortIcon = ({ field }) => {
+    if (sortField !== field) {
+      return <Filter size={12} />;
+    }
+    return sortDirection === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />;
+  };
+
+  if (loading && reports.length === 0) {
+    return (
+      <div className="table-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading reports...</p>
+      </div>
+    );
+  }
+
+  if (reports.length === 0) {
+    return (
+      <div className="table-empty">
+        <AlertCircle size={48} />
+        <h3>No reports found</h3>
+        <p>Try adjusting your filters</p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: '20px', height: '100%', overflow: 'auto' }}>
-      <h3 style={{ marginBottom: '20px' }}>Reports Table ({reports.length})</h3>
-      
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ 
-          width: '100%', 
-          borderCollapse: 'collapse',
-          fontSize: '14px'
-        }}>
+    <div className="admin-report-table">
+      <div className="table-header">
+        <div className="table-info">
+          <h3>Reports ({reports.length})</h3>
+          <p>Sorted by {sortField} ({sortDirection})</p>
+        </div>
+        <div className="table-controls">
+          <button className="export-table-btn">
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <div className="table-container">
+        <table className="reports-data-table">
           <thead>
-            <tr style={{ background: '#f8f9fa' }}>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>ID</th>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Title</th>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Category</th>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Status</th>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Urgency</th>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Created</th>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #dee2e6' }}>Actions</th>
+            <tr>
+              <th onClick={() => handleSort('title')}>
+                <div className="table-header-cell">
+                  <span>Title</span>
+                  <SortIcon field="title" />
+                </div>
+              </th>
+              <th onClick={() => handleSort('category')}>
+                <div className="table-header-cell">
+                  <span>Category</span>
+                  <SortIcon field="category" />
+                </div>
+              </th>
+              <th onClick={() => handleSort('status')}>
+                <div className="table-header-cell">
+                  <span>Status</span>
+                  <SortIcon field="status" />
+                </div>
+              </th>
+              <th onClick={() => handleSort('urgency')}>
+                <div className="table-header-cell">
+                  <span>Urgency</span>
+                  <SortIcon field="urgency" />
+                </div>
+              </th>
+              <th onClick={() => handleSort('createdAt')}>
+                <div className="table-header-cell">
+                  <span>Date</span>
+                  <SortIcon field="createdAt" />
+                </div>
+              </th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {reports.map((report, index) => (
+            {sortedReports.map((report) => (
               <React.Fragment key={report._id}>
-                <tr style={{ 
-                  borderBottom: '1px solid #dee2e6',
-                  background: index % 2 === 0 ? '#ffffff' : '#f8f9fa'
-                }}>
-                  <td style={{ padding: '12px' }}>
-                    <button
-                      onClick={() => setExpandedReport(expandedReport === report._id ? null : report._id)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        color: '#007bff'
-                      }}
-                    >
-                      {expandedReport === report._id ? '▼' : '▶'} {report._id.substring(0, 8)}...
-                    </button>
+                <tr className="table-data-row">
+                  <td>
+                    <div className="report-title-cell">
+                      <div className="report-title-text">
+                        {report.title}
+                      </div>
+                      <div className="report-id">
+                        #{report._id.slice(-6)}
+                      </div>
+                    </div>
                   </td>
-                  <td style={{ padding: '12px', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {report.title}
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <span style={{
-                      padding: '4px 8px',
-                      background: '#e9ecef',
-                      borderRadius: '12px',
-                      fontSize: '12px'
-                    }}>
+                  <td>
+                    <span className="category-tag">
                       {report.category}
                     </span>
                   </td>
-                  <td style={{ padding: '12px' }}>
-                    <span style={{
-                      padding: '4px 8px',
-                      background: getStatusColor(report.status),
-                      color: report.status === 'Pending' ? 'black' : 'white',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}>
-                      {report.status}
-                    </span>
+                  <td>
+                    <StatusBadge status={report.status} />
                   </td>
-                  <td style={{ padding: '12px' }}>{report.urgency}</td>
-                  <td style={{ padding: '12px' }}>
-                    {new Date(report.createdAt).toLocaleDateString()}
+                  <td>
+                    <UrgencyBadge urgency={report.urgency} />
                   </td>
-                  <td style={{ padding: '12px' }}>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <select
-                        value={statusUpdate[report._id] || ''}
-                        onChange={(e) => handleStatusChange(report._id, e.target.value)}
-                        style={{
-                          padding: '4px 8px',
-                          border: '1px solid #ced4da',
-                          borderRadius: '4px',
-                          fontSize: '12px'
-                        }}
+                  <td>
+                    <div className="date-cell">
+                      <div className="date-value">
+                        {new Date(report.createdAt).toLocaleDateString()}
+                      </div>
+                      <div className="time-value">
+                        {new Date(report.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                      <button 
+                        className="view-details-btn"
+                        onClick={() => setExpandedRow(expandedRow === report._id ? null : report._id)}
                       >
-                        <option value="">Change Status</option>
-                        <option value="Pending">Pending</option>
-                        <option value="In-progress">In Progress</option>
-                        <option value="Resolved">Resolved</option>
-                        <option value="Rejected">Rejected</option>
-                      </select>
-                      {statusUpdate[report._id] && (
-                        <button
-                          onClick={() => saveStatusUpdate(report._id)}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#28a745',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Save
-                        </button>
-                      )}
+                        <Eye size={16} />
+                        <span>Details</span>
+                      </button>
+                      <button className="more-actions-btn">
+                        <MoreVertical size={16} />
+                      </button>
                     </div>
                   </td>
                 </tr>
-                
-                {/* Expanded Details */}
-                {expandedReport === report._id && (
-                  <tr>
-                    <td colSpan="7" style={{ 
-                      padding: '20px', 
-                      background: '#f8f9fa',
-                      borderBottom: '2px solid #dee2e6'
-                    }}>
-                      <div style={{ display: 'flex', gap: '20px' }}>
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{ marginBottom: '10px' }}>Report Details</h4>
-                          <p><strong>Description:</strong> {report.description}</p>
-                          <p><strong>Location:</strong> {report.latitude?.toFixed(6)}, {report.longitude?.toFixed(6)}</p>
-                          <p><strong>Reporter:</strong> {report.reportedBy?.name || 'Unknown'} ({report.reportedBy?.email})</p>
-                          <p><strong>Upvotes:</strong> {report.upvoteCount || 0}</p>
-                          
+                {expandedRow === report._id && (
+                  <tr className="expanded-row">
+                    <td colSpan={6}>
+                      <div className="expanded-content">
+                        <div className="expanded-details">
+                          <div className="detail-section">
+                            <h4>Description</h4>
+                            <p>{report.description}</p>
+                          </div>
+                          <div className="detail-section">
+                            <h4>Location</h4>
+                            <p>{report.address || 'Address not available'}</p>
+                            <small>Coordinates: {report.latitude.toFixed(6)}, {report.longitude.toFixed(6)}</small>
+                          </div>
+                          <div className="detail-section">
+                            <h4>Reported By</h4>
+                            <p>{report.reportedBy?.name || 'Anonymous'}</p>
+                            <small>Email: {report.reportedBy?.email || 'Not provided'}</small>
+                          </div>
                           {report.photos && report.photos.length > 0 && (
-                            <div style={{ marginTop: '10px' }}>
-                              <strong>Photos:</strong>
-                              <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                                {report.photos.map((photo, idx) => (
+                            <div className="detail-section">
+                              <h4>Photos ({report.photos.length})</h4>
+                              <div className="expanded-photos">
+                                {report.photos.map((photo, index) => (
                                   <img 
-                                    key={idx}
+                                    key={index}
                                     src={photo} 
-                                    alt={`Report ${idx}`}
-                                    style={{ 
-                                      width: '80px', 
-                                      height: '80px', 
-                                      objectFit: 'cover',
-                                      borderRadius: '4px'
-                                    }}
+                                    alt={`Report ${index + 1}`}
+                                    className="expanded-photo"
+                                    onClick={() => window.open(photo, '_blank')}
                                   />
                                 ))}
                               </div>
                             </div>
                           )}
                         </div>
-                        
-                        <div style={{ flex: 1 }}>
-                          <h4 style={{ marginBottom: '10px' }}>Status History</h4>
-                          {report.statusHistory && report.statusHistory.length > 0 ? (
-                            <ul style={{ 
-                              listStyle: 'none', 
-                              padding: 0,
-                              maxHeight: '200px',
-                              overflowY: 'auto'
-                            }}>
-                              {report.statusHistory.map((history, idx) => (
-                                <li key={idx} style={{ 
-                                  padding: '8px', 
-                                  marginBottom: '5px',
-                                  background: 'white',
-                                  borderLeft: `4px solid ${getStatusColor(history.status)}`,
-                                  borderRadius: '4px'
-                                }}>
-                                  <div><strong>{history.status}</strong></div>
-                                  <small>
-                                    {new Date(history.changedAt).toLocaleString()}
-                                    {history.notes && ` - ${history.notes}`}
-                                  </small>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p>No status history available</p>
-                          )}
+                        <div className="expanded-actions">
+                          <select 
+                            className="status-select"
+                            value={report.status}
+                            onChange={(e) => onStatusUpdate(report._id, { status: e.target.value })}
+                          >
+                            {statusOptions.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <button className="quick-update-btn">
+                            Update Status
+                          </button>
                         </div>
                       </div>
                     </td>
@@ -209,16 +271,21 @@ function ReportTable({ reports, onStatusUpdate }) {
             ))}
           </tbody>
         </table>
-        
-        {reports.length === 0 && (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '40px', 
-            color: '#6c757d'
-          }}>
-            No reports found with current filters
-          </div>
-        )}
+      </div>
+
+      <div className="table-footer">
+        <div className="pagination-info">
+          Showing {reports.length} of {reports.length} reports
+        </div>
+        <div className="pagination-controls">
+          <button className="pagination-btn" disabled>
+            Previous
+          </button>
+          <span className="pagination-page">Page 1 of 1</span>
+          <button className="pagination-btn" disabled>
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

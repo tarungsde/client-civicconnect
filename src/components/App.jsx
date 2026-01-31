@@ -360,7 +360,7 @@ function App() {
                   <span className='stat-label'>In Progress</span>
                 </div>
               </div>
-              <div className='stat-card'>
+              {/* <div className='stat-card'>
                 <div className='stat-icon resolved'>
                   <CheckCircle size={20} />
                 </div>
@@ -368,7 +368,7 @@ function App() {
                   <span className='stat-value'>{reports.filter(r => r.status === 'Resolved').length}</span>
                   <span className='stat-label'>Resolved</span>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Filters Section */}
@@ -459,7 +459,7 @@ function App() {
                     <small>Try adjusting your filters</small>
                   </div>
                 ) : (
-                  reports.slice(reports.length - 5, reports.length).map(report => (
+                  reports.slice().reverse().slice(0, 5).map(report => (
                     <div 
                       key={report._id} 
                       className='report-item'

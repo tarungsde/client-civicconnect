@@ -1,19 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
+import { 
+  BarChart3,
+  TrendingUp,
+  Users,
+  Target,
+  Calendar,
+  Download,
+  RefreshCw,
+  AlertCircle,
+  X,
+  Clock,
+} from 'lucide-react';
 
-function StatsDashboard() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('week'); // 'day', 'week', 'month', 'year'
+function StatsDashboard({ stats: initialStats }) {
+  const [stats, setStats] = useState(initialStats);
+  const [timeRange, setTimeRange] = useState('week');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchStats();
+    if (!initialStats) {
+      fetchStats();
+    }
   }, [timeRange]);
 
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const response = await adminAPI.getStats();
+      const response = await adminAPI.getStats({ timeRange });
       setStats(response.data);
     } catch (error) {
       console.error('Failed to fetch stats:', error);
@@ -32,140 +46,136 @@ function StatsDashboard() {
     }
   };
 
-  if (loading) {
+  if (loading && !stats) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100%' 
-      }}>
-        Loading statistics...
+      <div className="admin-stats-loading">
+        <div className="loading-spinner-large"></div>
+        <p>Loading analytics...</p>
       </div>
     );
   }
 
   if (!stats) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100%' 
-      }}>
-        Failed to load statistics
+      <div className="admin-stats-error">
+        <AlertCircle size={48} />
+        <p>Failed to load statistics</p>
+        <button className="retry-btn" onClick={fetchStats}>
+          Retry
+        </button>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px', height: '100%', overflow: 'auto' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '20px'
-      }}>
-        <h3>Statistics Dashboard</h3>
-        <select
-          value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value)}
-          style={{
-            padding: '8px 12px',
-            border: '1px solid #ced4da',
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}
-        >
-          <option value="day">Last 24 Hours</option>
-          <option value="week">Last 7 Days</option>
-          <option value="month">Last 30 Days</option>
-          <option value="year">Last Year</option>
-        </select>
+    <div className="admin-stats-dashboard">
+      {/* Header */}
+      <div className="stats-dashboard-header">
+        <div className="header-left">
+          <BarChart3 size={24} />
+          <div>
+            <h2>Analytics Dashboard</h2>
+            <p className="time-range-text">{getTimeRangeText()}</p>
+          </div>
+        </div>
+        <div className="header-right">
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="time-range-select"
+          >
+            <option value="day">Last 24 Hours</option>
+            <option value="week">Last 7 Days</option>
+            <option value="month">Last 30 Days</option>
+            <option value="year">Last Year</option>
+          </select>
+          <button className="refresh-stats-btn" onClick={fetchStats} disabled={loading}>
+            <RefreshCw size={16} className={loading ? 'spinning' : ''} />
+          </button>
+          <button className="export-stats-btn">
+            <Download size={16} />
+            Export
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '20px',
-        marginBottom: '30px'
-      }}>
-        <div style={{ 
-          background: 'white', 
-          padding: '20px', 
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h4 style={{ marginBottom: '10px', color: '#6c757d' }}>Total Reports</h4>
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#007bff' }}>
-            {stats.totalReports}
+      <div className="stats-summary-cards">
+        <div className="summary-card total">
+          <div className="card-icon">
+            <Target size={24} />
+          </div>
+          <div className="card-content">
+            <span className="card-value">{stats.totalReports}</span>
+            <span className="card-label">Total Reports</span>
           </div>
         </div>
 
-        {stats.statusStats && stats.statusStats.map((stat, index) => {
-          const colors = ['#ffc107', '#17a2b8', '#28a745', '#dc3545'];
+        {stats.statusStats?.map((stat, index) => {
+          const colors = ['#ef4444', '#f59e0b', '#10b981', '#6b7280'];
+          const icons = [<AlertCircle />, <Clock />, <Target />, <X />];
           return (
-            <div key={stat._id} style={{ 
-              background: 'white', 
-              padding: '20px', 
-              borderRadius: '8px',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}>
-              <h4 style={{ marginBottom: '10px', color: '#6c757d' }}>
-                {stat._id || 'Unknown'} Status
-              </h4>
-              <div style={{ 
-                fontSize: '32px', 
-                fontWeight: 'bold',
-                color: colors[index] || '#6c757d'
-              }}>
-                {stat.count}
+            <div key={stat._id || index} className="summary-card" style={{ borderLeftColor: colors[index] }}>
+              <div className="card-icon" style={{ color: colors[index] }}>
+                {icons[index] || <Target />}
               </div>
-              <div style={{ fontSize: '14px', color: '#6c757d', marginTop: '5px' }}>
-                {Math.round((stat.count / stats.totalReports) * 100)}% of total
+              <div className="card-content">
+                <span className="card-value" style={{ color: colors[index] }}>
+                  {stat.count}
+                </span>
+                <span className="card-label">{stat._id || 'Unknown'}</span>
+                <span className="card-percentage">
+                  {Math.round((stat.count / stats.totalReports) * 100)}%
+                </span>
               </div>
             </div>
           );
         })}
+
+        <div className="summary-card users">
+          <div className="card-icon">
+            <Users size={24} />
+          </div>
+          <div className="card-content">
+            <span className="card-value">{stats.uniqueReporters || 'N/A'}</span>
+            <span className="card-label">Active Users</span>
+          </div>
+        </div>
+
+        <div className="summary-card trend">
+          <div className="card-icon">
+            <TrendingUp size={24} />
+          </div>
+          <div className="card-content">
+            <span className="card-value">{stats.averageResolutionTime || 'N/A'}</span>
+            <span className="card-label">Avg. Resolution Time</span>
+          </div>
+        </div>
       </div>
 
-      {/* Charts/Data Sections */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '20px'
-      }}>
+      {/* Charts Grid */}
+      <div className="stats-charts-grid">
         {/* Category Distribution */}
-        <div style={{ 
-          background: 'white', 
-          padding: '20px', 
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h4 style={{ marginBottom: '15px' }}>Category Distribution</h4>
-          <div>
-            {stats.categoryStats && stats.categoryStats.map((category, index) => (
-              <div key={category._id} style={{ marginBottom: '10px' }}>
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  marginBottom: '5px'
-                }}>
-                  <span>{category._id || 'Unknown'}</span>
-                  <span>{category.count} ({Math.round((category.count / stats.totalReports) * 100)}%)</span>
+        <div className="chart-card">
+          <div className="chart-header">
+            <h4>Category Distribution</h4>
+            <span className="chart-subtitle">By report type</span>
+          </div>
+          <div className="category-chart">
+            {stats.categoryStats?.map((category, index) => (
+              <div key={category._id} className="category-chart-item">
+                <div className="category-chart-label">
+                  <span>{category._id || 'Other'}</span>
+                  <span>{category.count}</span>
                 </div>
-                <div style={{ 
-                  height: '8px', 
-                  background: '#e9ecef',
-                  borderRadius: '4px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{ 
-                    height: '100%', 
-                    width: `${(category.count / stats.totalReports) * 100}%`,
-                    background: `hsl(${index * 60}, 70%, 50%)`
-                  }} />
+                <div className="category-chart-bar">
+                  <div 
+                    className="category-chart-fill"
+                    style={{ 
+                      width: `${(category.count / stats.totalReports) * 100}%`,
+                      backgroundColor: `hsl(${index * 60}, 70%, 50%)`
+                    }}
+                  />
                 </div>
               </div>
             ))}
@@ -173,34 +183,33 @@ function StatsDashboard() {
         </div>
 
         {/* Urgency Distribution */}
-        <div style={{ 
-          background: 'white', 
-          padding: '20px', 
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h4 style={{ marginBottom: '15px' }}>Urgency Distribution</h4>
-          <div>
-            {stats.urgencyStats && stats.urgencyStats.map((urgency) => {
+        <div className="chart-card">
+          <div className="chart-header">
+            <h4>Urgency Level</h4>
+            <span className="chart-subtitle">Report priority breakdown</span>
+          </div>
+          <div className="urgency-chart">
+            {stats.urgencyStats?.map((urgency) => {
               const colorMap = {
-                'high': '#dc3545',
-                'medium': '#ffc107',
-                'low': '#28a745'
+                'high': '#ef4444',
+                'medium': '#f59e0b',
+                'low': '#10b981'
               };
               return (
-                <div key={urgency._id} style={{ marginBottom: '10px' }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    marginBottom: '5px'
-                  }}>
-                    <span style={{ 
-                      textTransform: 'capitalize',
-                      color: colorMap[urgency._id] || '#6c757d'
-                    }}>
-                      {urgency._id || 'Unknown'}
-                    </span>
-                    <span>{urgency.count}</span>
+                <div key={urgency._id} className="urgency-chart-item">
+                  <div className="urgency-chart-label">
+                    <div className="urgency-dot" style={{ backgroundColor: colorMap[urgency._id] || '#6b7280' }} />
+                    <span className="urgency-name">{urgency._id || 'Unknown'}</span>
+                    <span className="urgency-count">{urgency.count}</span>
+                  </div>
+                  <div className="urgency-chart-bar">
+                    <div 
+                      className="urgency-chart-fill"
+                      style={{ 
+                        width: `${(urgency.count / stats.totalReports) * 100}%`,
+                        backgroundColor: colorMap[urgency._id] || '#6b7280'
+                      }}
+                    />
                   </div>
                 </div>
               );
@@ -208,52 +217,93 @@ function StatsDashboard() {
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div style={{ 
-          background: 'white', 
-          padding: '20px', 
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          gridColumn: '1 / -1'
-        }}>
-          <h4 style={{ marginBottom: '15px' }}>Recent Activity ({getTimeRangeText()})</h4>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'flex-end',
-            height: '200px',
-            gap: '10px',
-            padding: '10px 0'
-          }}>
+        {/* Recent Activity Chart */}
+        <div className="chart-card full-width">
+          <div className="chart-header">
+            <h4>Report Activity</h4>
+            <span className="chart-subtitle">{getTimeRangeText()}</span>
+          </div>
+          <div className="activity-chart">
             {stats.recentActivity && stats.recentActivity.length > 0 ? (
-              stats.recentActivity.map((day, index) => {
-                const maxCount = Math.max(...stats.recentActivity.map(d => d.count));
-                const height = (day.count / maxCount) * 150;
-                return (
-                  <div key={day._id} style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ 
-                      height: `${height}px`,
-                      background: '#007bff',
-                      borderRadius: '4px 4px 0 0',
-                      marginBottom: '5px'
-                    }} />
-                    <div style={{ fontSize: '12px', color: '#6c757d' }}>
-                      {day._id.split('-').slice(1).join('/')}
+              <div className="activity-bars">
+                {stats.recentActivity.map((day, index) => {
+                  const maxCount = Math.max(...stats.recentActivity.map(d => d.count));
+                  const height = maxCount > 0 ? (day.count / maxCount) * 150 : 0;
+                  return (
+                    <div key={day._id} className="activity-bar-item">
+                      <div className="activity-bar-container">
+                        <div 
+                          className="activity-bar"
+                          style={{ height: `${height}px` }}
+                        />
+                        <div className="activity-count">{day.count}</div>
+                      </div>
+                      <div className="activity-label">
+                        {day._id.split('-').slice(1).join('/')}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
-                      {day.count}
-                    </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             ) : (
-              <div style={{ 
-                textAlign: 'center', 
-                width: '100%', 
-                color: '#6c757d'
-              }}>
-                No activity data available
+              <div className="no-activity">
+                <Calendar size={48} />
+                <p>No activity data available</p>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Status Timeline */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <h4>Status Flow</h4>
+            <span className="chart-subtitle">Report lifecycle</span>
+          </div>
+          <div className="status-flow">
+            {stats.statusTimeline?.map((status, index) => (
+              <div key={status._id} className="status-flow-item">
+                <div className="status-flow-label">
+                  <span>{status._id}</span>
+                  <span>{status.count}</span>
+                </div>
+                <div className="status-flow-bar">
+                  <div 
+                    className="status-flow-fill"
+                    style={{ 
+                      width: `${(status.count / stats.totalReports) * 100}%`,
+                      backgroundColor: `hsl(${index * 90}, 70%, 50%)`
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Resolution Time */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <h4>Resolution Time</h4>
+            <span className="chart-subtitle">Days to resolve</span>
+          </div>
+          <div className="resolution-stats">
+            <div className="resolution-stat">
+              <span className="resolution-label">Average</span>
+              <span className="resolution-value">{stats.averageResolutionTime || 'N/A'} days</span>
+            </div>
+            <div className="resolution-stat">
+              <span className="resolution-label">Median</span>
+              <span className="resolution-value">{stats.medianResolutionTime || 'N/A'} days</span>
+            </div>
+            <div className="resolution-stat">
+              <span className="resolution-label">Fastest</span>
+              <span className="resolution-value">{stats.fastestResolution || 'N/A'} days</span>
+            </div>
+            <div className="resolution-stat">
+              <span className="resolution-label">Longest</span>
+              <span className="resolution-value">{stats.longestResolution || 'N/A'} days</span>
+            </div>
           </div>
         </div>
       </div>
