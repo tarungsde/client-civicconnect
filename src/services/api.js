@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API = axios.create({
   // baseURL: "http://localhost:3000/api",
-  baseURL: "https://server-civicconnect.onrender.com/api",
+  baseURL: import.meta.env.VITE_BACKEND_URL,
   headers: {
     'Content-Type': 'application/json'
   }
