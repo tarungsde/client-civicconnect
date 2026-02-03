@@ -15,12 +15,9 @@ import {
   Trash2,
   Globe,
   Hole, 
-  Trash2, 
   Lightbulb, 
   Droplets, 
   TrafficCone,
-  AlertCircle,
-  FileText 
 } from 'lucide-react';
 
 function ReportCard({
