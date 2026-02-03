@@ -12,7 +12,7 @@ import {
   FileText,
   Trash2,
   Globe,
-  Hole, 
+  CircleAlert,
   Lightbulb, 
   Droplets, 
   TrafficCone,
@@ -30,7 +30,7 @@ function ReportCard({
     { 
       value: 'pothole', 
       label: 'Pothole', 
-      icon: <Hole size={18} />, 
+      icon: <CircleAlert size={18} />, 
       color: '#8B4513' 
     },
     { 
