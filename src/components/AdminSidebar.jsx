@@ -10,7 +10,7 @@ import {
   EyeOff
 } from 'lucide-react';
 
-function AdminSidebar({ filters, setFilters, viewMode, setViewMode, stats }) {
+function AdminSidebar({ filters, setFilters, viewMode, setViewMode, stats, isOpen, onClose }) {
   const statusOptions = [
     { value: '', label: 'All Status', icon: <Filter size={16} /> },
     { value: 'Pending', label: 'Pending', icon: <AlertCircle size={16} />, color: '#ef4444' },
@@ -47,14 +47,22 @@ function AdminSidebar({ filters, setFilters, viewMode, setViewMode, stats }) {
     alert('Export functionality would be implemented here');
   };
 
+  const handleClose = () => {
+    onClose();
+  };
+
   return (
-    <aside className="admin-sidebar-panel">
+    <aside className={`admin-sidebar-panel ${isOpen ? 'open' : ''}`}>
       <div className="admin-sidebar-header">
         <div className="sidebar-title">
           <Filter size={20} />
           <h3>Filters & Controls</h3>
         </div>
-        <button className="sidebar-close-btn">
+        <button 
+          className="sidebar-close-btn"
+          onClick={handleClose}
+          aria-label="Close sidebar"
+        >
           <X size={20} />
         </button>
       </div>

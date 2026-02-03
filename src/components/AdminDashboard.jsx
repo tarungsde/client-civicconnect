@@ -12,10 +12,8 @@ import {
   LogOut, 
   Loader2,
   Shield,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Ban
+  X,
+  Filter
 } from 'lucide-react';
 import multiColorPin from '../assets/multi-color-pin.png';
 import redPin from '../assets/red-pin.png';
@@ -36,6 +34,7 @@ function AdminDashboard() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const navigate = useNavigate();
 
@@ -43,6 +42,12 @@ function AdminDashboard() {
     fetchReports();
     fetchStats();
   }, [filters]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 300);
+  }, [isSidebarOpen]);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -131,30 +136,34 @@ function AdminDashboard() {
     return statusIcons[normalizedStatus] || statusIcons['default'];
   };
 
-  const StatusIndicator = ({ status }) => {
-    const getStatusConfig = (status) => {
-      switch(status?.toLowerCase()) {
-        case 'pending': return { color: '#ef4444', icon: <AlertCircle size={14} />, label: 'Pending' };
-        case 'in-progress': return { color: '#f59e0b', icon: <Clock size={14} />, label: 'In Progress' };
-        case 'resolved': return { color: '#10b981', icon: <CheckCircle size={14} />, label: 'Resolved' };
-        case 'rejected': return { color: '#6b7280', icon: <Ban size={14} />, label: 'Rejected' };
-        default: return { color: '#6b7280', icon: null, label: status };
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+  
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        setIsSidebarOpen(false);
       }
     };
 
-    const config = getStatusConfig(status);
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+  
+  useEffect(() => {
+    const isMobile = window.innerWidth < 1200;
     
-    return (
-      <span className="admin-status-badge" style={{ 
-        backgroundColor: `${config.color}15`,
-        borderColor: config.color,
-        color: config.color
-      }}>
-        {config.icon}
-        {config.label}
-      </span>
-    );
-  };
+    if (isMobile && isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isSidebarOpen]);
 
   return (
     <div className="admin-dashboard-shell">
@@ -205,7 +214,16 @@ function AdminDashboard() {
           viewMode={viewMode}
           setViewMode={setViewMode}
           stats={stats}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
         />
+
+        {isSidebarOpen && (
+          <div 
+            className="admin-sidebar-overlay open" 
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
         
         {/* Main Content Area */}
         <div className="admin-content-area">
@@ -248,6 +266,16 @@ function AdminDashboard() {
                   <span>Loading reports...</span>
                 </div>
               )}
+
+              <button 
+                className="admin-sidebar-toggle-btn"
+                onClick={toggleSidebar}
+                aria-label={isSidebarOpen ? "Hide filters" : "Show filters"}
+              >
+                <Filter size={20} />
+                <span>{isSidebarOpen ? "Hide Filters" : "Show Filters"}</span>
+              </button>
+              
               <button 
                 className="admin-refresh-btn"
                 onClick={fetchReports}
@@ -269,6 +297,7 @@ function AdminDashboard() {
                   center={[13.0835, 80.2706]} 
                   zoom={12} 
                   className="admin-leaflet-map"
+                  zoomControl={false}
                 >
                   <TileLayer 
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -281,13 +310,13 @@ function AdminDashboard() {
                       icon={getStatusIcon(report.status)}
                       eventHandlers={{ click: () => setSelectedReport(report) }}
                     >
-                      <Popup>
+                      {/* <Popup>
                         <AdminReportPopup 
                           report={report} 
                           onStatusUpdate={updateStatus}
                           isUpdatingStatus={isUpdatingStatus}
                         />
-                      </Popup>
+                      </Popup> */}
                     </Marker>
                   ))}
                 </MapContainer>
@@ -300,7 +329,7 @@ function AdminDashboard() {
                         className="close-selected-btn"
                         onClick={() => setSelectedReport(null)}
                       >
-                        ×
+                        <X size={20} />
                       </button>
                     </div>
                     <AdminReportPopup 

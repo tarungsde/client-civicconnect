@@ -48,8 +48,8 @@ function App() {
   const [loadingReports, setLoadingReports] = useState(true);
   const [reportsError, setReportsError] = useState(null);
   const [showFilters, setShowFilters] = useState(() => {
-  return window.innerWidth >= 1024;
-});
+      return window.innerWidth >= 1024;
+    });
   const [filters, setFilters] = useState({
     status: '',
     category: '',
