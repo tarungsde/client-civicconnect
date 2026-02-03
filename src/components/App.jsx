@@ -495,6 +495,7 @@ function App() {
               <button 
                 className='control-btn filter-toggle'
                 onClick={() => setShowFilters(true)}
+                title='Toggle Filter'
               >
                 <Filter size={20} />
               </button>
@@ -505,6 +506,7 @@ function App() {
                 onClick={() => { getLocation(true); }}
                 className='control-btn location-btn'
                 disabled={isLoading}
+                title='Refresh Location'
               >
                 <RefreshCw size={20} className={isLoading ? 'spinning' : ''} />
               </button>
@@ -513,6 +515,7 @@ function App() {
                 <button
                   className='control-btn manual-mode-btn'
                   onClick={() => setManualMode(true)}
+                  title='Adjust Location'
                 >
                   <Target size={20} />
                 </button>
@@ -522,6 +525,7 @@ function App() {
                 <button
                   className='control-btn cancel-btn'
                   onClick={() => setManualMode(false)}
+                  title='Exit Manual Mode'
                 >
                   <X size={20} />
                 </button>
