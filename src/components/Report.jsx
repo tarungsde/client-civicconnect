@@ -30,37 +30,37 @@ function ReportCard({
     { 
       value: 'pothole', 
       label: 'Pothole', 
-      icon: <CircleAlert size={18} />, 
+      icon: <CircleAlert size={24} />, 
       color: '#8B4513' 
     },
     { 
       value: 'garbage', 
       label: 'Garbage', 
-      icon: <Trash2 size={18} />, 
+      icon: <Trash2 size={24} />, 
       color: '#4CAF50' 
     },
     { 
       value: 'streetlight', 
       label: 'Street Light', 
-      icon: <Lightbulb size={18} />, 
+      icon: <Lightbulb size={24} />, 
       color: '#FFC107' 
     },
     { 
       value: 'water', 
       label: 'Water Issue', 
-      icon: <Droplets size={18} />, 
+      icon: <Droplets size={24} />, 
       color: '#2196F3' 
     },
     { 
       value: 'traffic', 
       label: 'Traffic', 
-      icon: <TrafficCone size={18} />, 
+      icon: <TrafficCone size={24} />, 
       color: '#FF5722' 
     },
     { 
       value: 'other', 
       label: 'Other', 
-      icon: <FileText size={18} />, 
+      icon: <FileText size={24} />, 
       color: '#9C27B0' 
     }
   ];
