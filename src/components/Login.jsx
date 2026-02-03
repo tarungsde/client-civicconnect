@@ -205,6 +205,35 @@ function Login() {
                   </div>
                 )}
               </div>
+
+              <div className="guest-option">
+                <button
+                  className="guest-btn"
+                  onClick={() => {
+                    // Create demo admin credentials
+                    const demoAdmin = {
+                      token: 'demo-jwt-token-admin',
+                      user: {
+                        id: 'demo-admin-123',
+                        email: 'demo.admin@example.com',
+                        name: 'Demo Administrator',
+                        picture: null,
+                        role: 'admin',
+                      }
+                    };
+                    
+                    localStorage.setItem('token', demoAdmin.token);
+                    localStorage.setItem('user', JSON.stringify(demoAdmin.user));
+                    window.dispatchEvent(new Event('authStateChange'));
+                    
+                    alert('Demo Admin Mode Activated! You can now access admin features.');
+                    
+                    setTimeout(() => navigate('/app'), 300);
+                  }}
+                >
+                  Try Admin Dashboard (Demo)
+                </button>
+              </div>
               
               {/* Divider */}
               <div className="divider">
