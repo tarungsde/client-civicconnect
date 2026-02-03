@@ -13,7 +13,14 @@ import {
   FileText,
   ChevronDown,
   Trash2,
-  Globe
+  Globe,
+  Hole, 
+  Trash2, 
+  Lightbulb, 
+  Droplets, 
+  TrafficCone,
+  AlertCircle,
+  FileText 
 } from 'lucide-react';
 
 function ReportCard({
@@ -23,13 +30,44 @@ function ReportCard({
   onSuccess,
   onCancel 
 }) {
+
   const categories = [
-    { value: 'pothole', label: 'Pothole', icon: '🕳️', color: '#8B4513' },
-    { value: 'garbage', label: 'Garbage', icon: '🗑️', color: '#4CAF50' },
-    { value: 'streetlight', label: 'Street Light', icon: '💡', color: '#FFC107' },
-    { value: 'water', label: 'Water Issue', icon: '💧', color: '#2196F3' },
-    { value: 'traffic', label: 'Traffic', icon: '🚦', color: '#FF5722' },
-    { value: 'other', label: 'Other', icon: '📋', color: '#9C27B0' }
+    { 
+      value: 'pothole', 
+      label: 'Pothole', 
+      icon: <Hole size={18} />, 
+      color: '#8B4513' 
+    },
+    { 
+      value: 'garbage', 
+      label: 'Garbage', 
+      icon: <Trash2 size={18} />, 
+      color: '#4CAF50' 
+    },
+    { 
+      value: 'streetlight', 
+      label: 'Street Light', 
+      icon: <Lightbulb size={18} />, 
+      color: '#FFC107' 
+    },
+    { 
+      value: 'water', 
+      label: 'Water Issue', 
+      icon: <Droplets size={18} />, 
+      color: '#2196F3' 
+    },
+    { 
+      value: 'traffic', 
+      label: 'Traffic', 
+      icon: <TrafficCone size={18} />, 
+      color: '#FF5722' 
+    },
+    { 
+      value: 'other', 
+      label: 'Other', 
+      icon: <FileText size={18} />, 
+      color: '#9C27B0' 
+    }
   ];
 
   const urgencies = [
