@@ -116,7 +116,7 @@ function ReportCard({
     if (latitude && longitude) {
       fetchAddress(latitude, longitude);
     }
-  }, [latitude, longitude]);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
