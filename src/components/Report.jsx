@@ -82,6 +82,8 @@ function ReportCard({
   const [address, setAddress] = useState('');
   const [charCount, setCharCount] = useState({ title: 0, description: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [reportLatitude, setReportLatitude] = useState(latitude || '');
+  const [reportLongitude, setReportLongitude] = useState(longitude || '');
 
   useEffect(() => {
     if (editing) {
@@ -113,8 +115,8 @@ function ReportCard({
   }, [preview]);
 
   useEffect(() => {
-    if (latitude && longitude) {
-      fetchAddress(latitude, longitude);
+    if (reportLatitude && reportLongitude) {
+      fetchAddress(reportLatitude, reportLongitude);
     }
   }, []);
 
@@ -157,8 +159,8 @@ function ReportCard({
         description: description.trim(),
         category,
         urgency,
-        latitude: editing ? editing.latitude : latitude,
-        longitude: editing ? editing.longitude : longitude,
+        latitude: editing ? editing.latitude : reportLatitude,
+        longitude: editing ? editing.longitude : reportLongitude,
         photos: photoUrls
       };
 
@@ -589,11 +591,11 @@ function ReportCard({
             <div className="location-details">
               <div className="coordinate-item">
                 <span className="coordinate-label">Latitude:</span>
-                <span className="coordinate-value">{editing ? editing.latitude : latitude}</span>
+                <span className="coordinate-value">{editing ? editing.latitude : reportLatitude}</span>
               </div>
               <div className="coordinate-item">
                 <span className="coordinate-label">Longitude:</span>
-                <span className="coordinate-value">{editing ? editing.longitude : longitude}</span>
+                <span className="coordinate-value">{editing ? editing.longitude : reportLongitude}</span>
               </div>
               <div className="address-item">
                 <span className="address-label">Address:</span>
